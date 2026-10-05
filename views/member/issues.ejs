@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('../partials/head') %>
+    <title>My Books - Member Portal</title>
+</head>
+<body>
+    <div class="app-layout fade-in">
+        <%- include('../partials/member-sidebar') %>
+        
+        <div class="main-content">
+            <%- include('../partials/topbar') %>
+            
+            <main class="page-content slide-up">
+                <h1 style="font-size: var(--font-size-title); margin-bottom: var(--space-6);">My Books</h1>
+                <div class="card">
+                    <p>View your currently borrowed books and history here.</p>
+                </div>
+            </main>
+        </div>
+        
+        <div class="sidebar-backdrop"></div>
+    </div>
+    <script src="/js/shell.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

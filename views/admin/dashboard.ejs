@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('../partials/head') %>
+    <title>Admin Dashboard - Library Management System</title>
+    <style>
+        .metric-card {
+            display: flex;
+            align-items: flex-start;
+            gap: var(--space-4);
+        }
+        .metric-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-md);
+            background-color: var(--bg-color);
+            color: var(--accent-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .metric-content {
+            display: flex;
+            flex-direction: column;
+        }
+        .metric-label {
+            font-size: var(--font-size-meta);
+            color: var(--text-secondary);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .metric-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1.2;
+            margin-top: var(--space-1);
+        }
+        .dashboard-grid {
+            display: grid;
+            gap: var(--space-6);
+            margin-bottom: var(--space-6);
+        }
+        @media (min-width: 1200px) {
+            .metrics-row-1 { grid-template-columns: repeat(3, 1fr); }
+            .metrics-row-2 { grid-template-columns: repeat(2, 1fr); }
+            .action-attention-row { grid-template-columns: 2fr 1fr; }
+        }
+        @media (min-width: 768px) and (max-width: 1199px) {
+            .metrics-row-1, .metrics-row-2, .action-attention-row { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 767px) {
+            .metrics-row-1, .metrics-row-2, .action-attention-row { grid-template-columns: 1fr; }
+        }
+        .attention-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            padding: var(--space-3);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--space-2);
+        }
+        .attention-warning {
+            background-color: var(--warning-bg);
+            border: 1px solid var(--warning);
+            color: #92400E;
+        }
+        .attention-success {
+            background-color: var(--success-bg);
+            border: 1px solid var(--success);
+            color: #065F46;
+        }
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--space-3);
+        }
+        .action-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-2);
+            padding: var(--space-4);
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-weight: 500;
+            transition: all var(--transition-fast);
+            text-align: center;
+        }
+        .action-card:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+            background-color: var(--surface-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-layout fade-in">
+        <%- include('../partials/admin-sidebar') %>
+        
+        <div class="main-content">
+            <%- include('../partials/topbar') %>
+            
+            <main class="page-content slide-up">
+                <div style="margin-bottom: var(--space-6);">
+                    <h1 style="font-size: var(--font-size-title);">Overview</h1>
+                    <p style="color: var(--text-secondary); margin-top: var(--space-1);">Welcome back. Here's what's happening in your library.</p>
+                </div>
+
+                <% if (locals.error) { %>
+                    <div class="card attention-item attention-warning" style="margin-bottom: var(--space-6);">
+                        <i data-lucide="alert-triangle"></i>
+                        <div>
+                            <strong>Error</strong>
+                            <p><%= error %></p>
+                        </div>
+                    </div>
+                <% } else if (locals.metrics) { %>
+                    
+                    <!-- Top Metrics -->
+                    <div class="dashboard-grid metrics-row-1">
+                        <div class="card metric-card">
+                            <div class="metric-icon"><i data-lucide="book"></i></div>
+                            <div class="metric-content">
+                                <span class="metric-label">Total Books</span>
+                                <span class="metric-value"><%= metrics.total_books %></span>
+                            </div>
+                        </div>
+                        <div class="card metric-card">
+                            <div class="metric-icon"><i data-lucide="users"></i></div>
+                            <div class="metric-content">
+                                <span class="metric-label">Total Members</span>
+                                <span class="metric-value"><%= metrics.total_members %></span>
+                            </div>
+                        </div>
+                        <div class="card metric-card">
+                            <div class="metric-icon"><i data-lucide="check-circle"></i></div>
+                            <div class="metric-content">
+                                <span class="metric-label">Available Copies</span>
+                                <span class="metric-value"><%= metrics.available_copies %></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-grid metrics-row-2">
+                        <div class="card metric-card">
+                            <div class="metric-icon"><i data-lucide="bookmark"></i></div>
+                            <div class="metric-content">
+                                <span class="metric-label">Active Issues</span>
+                                <span class="metric-value"><%= metrics.active_issues %></span>
+                            </div>
+                        </div>
+                        <div class="card metric-card">
+                            <div class="metric-icon" style="color: var(--danger); background-color: var(--danger-bg);"><i data-lucide="alert-circle"></i></div>
+                            <div class="metric-content">
+                                <span class="metric-label">Overdue</span>
+                                <span class="metric-value"><%= metrics.overdue_issues %></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Needs Attention & Quick Actions -->
+                    <div class="dashboard-grid action-attention-row">
+                        <!-- Needs Attention -->
+                        <div class="card">
+                            <h2 style="font-size: var(--font-size-heading); margin-bottom: var(--space-4);">Needs Attention</h2>
+                            
+                            <% if (metrics.overdue_issues > 0) { %>
+                                <div class="attention-item attention-warning">
+                                    <i data-lucide="alert-circle"></i>
+                                    <div style="flex: 1;">
+                                        <strong><%= metrics.overdue_issues %> <%= metrics.overdue_issues == 1 ? 'book is' : 'books are' %> overdue</strong>
+                                    </div>
+                                    <a href="/admin/issues" class="btn btn-secondary" style="background-color: transparent; border-color: currentColor;">View circulation</a>
+                                </div>
+                            <% } else { %>
+                                <div class="attention-item attention-success">
+                                    <i data-lucide="check-circle"></i>
+                                    <div>
+                                        <strong>Everything looks good</strong>
+                                        <p style="font-size: var(--font-size-meta); margin-top: 2px;">No overdue books require attention.</p>
+                                    </div>
+                                </div>
+                            <% } %>
+
+                            <% if (metrics.out_of_stock_books > 0) { %>
+                                <div class="attention-item attention-warning" style="margin-top: var(--space-3); background-color: var(--warning-bg); border-color: var(--warning); color: #92400E;">
+                                    <i data-lucide="archive"></i>
+                                    <div style="flex: 1;">
+                                        <strong><%= metrics.out_of_stock_books %> <%= metrics.out_of_stock_books == 1 ? 'book is' : 'books are' %> currently unavailable</strong>
+                                    </div>
+                                    <a href="/admin/books" class="btn btn-secondary" style="background-color: transparent; border-color: currentColor;">View catalog</a>
+                                </div>
+                            <% } %>
+                        </div>
+
+                        <!-- Quick Actions -->
+                        <div class="card">
+                            <h2 style="font-size: var(--font-size-heading); margin-bottom: var(--space-4);">Quick Actions</h2>
+                            <div class="quick-actions">
+                                <a href="/admin/books" class="action-card">
+                                    <i data-lucide="plus-circle"></i> Add Book
+                                </a>
+                                <a href="/admin/members" class="action-card">
+                                    <i data-lucide="user-plus"></i> Add Member
+                                </a>
+                                <a href="/admin/issues" class="action-card">
+                                    <i data-lucide="arrow-up-right"></i> Issue Book
+                                </a>
+                                <a href="/admin/issues" class="action-card">
+                                    <i data-lucide="arrow-down-left"></i> Return Book
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Circulation -->
+                    <div class="card" style="margin-bottom: var(--space-6);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-4);">
+                            <h2 style="font-size: var(--font-size-heading);">Recent Circulation</h2>
+                            <a href="/admin/issues" class="btn btn-ghost">View All</a>
+                        </div>
+                        
+                        <% if (locals.recentCirculation && recentCirculation.length > 0) { %>
+                            <div class="table-container">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Book</th>
+                                            <th>Member</th>
+                                            <th>Issue Date</th>
+                                            <th>Due Date</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% recentCirculation.forEach(issue => { %>
+                                            <tr>
+                                                <td style="font-weight: 500;"><%= issue.book_title %></td>
+                                                <td><%= issue.member_name %></td>
+                                                <td><%= new Date(issue.issue_date).toLocaleDateString() %></td>
+                                                <td><%= new Date(issue.due_date).toLocaleDateString() %></td>
+                                                <td>
+                                                    <% if (issue.status === 'Issued') { %>
+                                                        <span class="badge badge-warning">Issued</span>
+                                                    <% } else if (issue.status === 'Returned') { %>
+                                                        <span class="badge badge-success">Returned</span>
+                                                    <% } else if (issue.status === 'Overdue') { %>
+                                                        <span class="badge badge-danger">Overdue</span>
+                                                    <% } else { %>
+                                                        <span class="badge"><%= issue.status %></span>
+                                                    <% } %>
+                                                </td>
+                                            </tr>
+                                        <% }) %>
+                                    </tbody>
+                                </table>
+                            </div>
+                        <% } else { %>
+                            <div style="text-align: center; padding: var(--space-10) 0; color: var(--text-secondary);">
+                                <i data-lucide="activity" style="width: 48px; height: 48px; margin-bottom: var(--space-3); color: var(--text-muted); opacity: 0.5;"></i>
+                                <h3 style="font-size: var(--font-size-heading); color: var(--text-primary);">No circulation activity yet</h3>
+                                <p style="margin-top: var(--space-1);">Once books are issued, recent activity will appear here.</p>
+                            </div>
+                        <% } %>
+                    </div>
+                <% } else { %>
+                    <!-- Loading / Skeleton state fallback if missing variables entirely -->
+                    <div class="card">
+                        <p>Loading dashboard data...</p>
+                    </div>
+                <% } %>
+            </main>
+        </div>
+        
+        <div class="sidebar-backdrop"></div>
+    </div>
+    <script src="/js/shell.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

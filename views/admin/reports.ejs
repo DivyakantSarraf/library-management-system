@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('../partials/head') %>
+    <title>Reports - Admin Panel</title>
+    <style>
+        .reports-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--space-4);
+            margin-bottom: var(--space-6);
+        }
+        
+        .report-section {
+            margin-bottom: var(--space-8);
+        }
+
+        .filter-form {
+            display: flex;
+            align-items: flex-end;
+            gap: var(--space-4);
+            flex-wrap: wrap;
+            background: var(--surface-color);
+            padding: var(--space-4);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            margin-bottom: var(--space-6);
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-2);
+            min-width: 200px;
+        }
+
+        .filter-group label {
+            font-size: var(--font-size-meta);
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .table-container {
+            margin-top: var(--space-4);
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--space-4) 0;
+            margin-top: var(--space-4);
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .pagination-info {
+            color: var(--text-secondary);
+            font-size: var(--font-size-meta);
+        }
+
+        .metric-card {
+            display: flex;
+            align-items: center;
+            padding: var(--space-4);
+            gap: var(--space-4);
+        }
+        .metric-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-full);
+            background-color: var(--accent-light);
+            color: var(--accent-primary);
+        }
+        .metric-content {
+            display: flex;
+            flex-direction: column;
+        }
+        .metric-label {
+            font-size: var(--font-size-meta);
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .metric-value {
+            font-size: var(--font-size-title);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .overdue-text {
+            color: var(--danger);
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-layout fade-in">
+        <%- include('../partials/admin-sidebar') %>
+        
+        <div class="main-content">
+            <%- include('../partials/topbar') %>
+            
+            <main class="page-content slide-up">
+                <div style="margin-bottom: var(--space-6);">
+                    <h1 style="font-size: var(--font-size-title);">Reports</h1>
+                    <p style="color: var(--text-secondary); margin-top: var(--space-1);">Monitor circulation, inventory, members, overdue books, and fines.</p>
+                </div>
+
+                <% if (locals.error) { %>
+                    <div class="card attention-item" style="background-color: var(--warning-bg); border-color: var(--warning); margin-bottom: var(--space-6);">
+                        <i data-lucide="alert-triangle" style="color: #92400E;"></i>
+                        <div style="color: #92400E;">
+                            <strong>Error</strong>
+                            <p><%= error %></p>
+                        </div>
+                    </div>
+                <% } %>
+
+                <form class="filter-form" action="/admin/reports" method="GET">
+                    <div class="filter-group">
+                        <label for="from_date">From Date</label>
+                        <input type="date" id="from_date" name="from_date" class="form-input" value="<%= locals.from_date %>" required>
+                    </div>
+                    <div class="filter-group">
+                        <label for="to_date">To Date</label>
+                        <input type="date" id="to_date" name="to_date" class="form-input" value="<%= locals.to_date %>" required>
+                    </div>
+                    <div class="filter-group" style="min-width: auto;">
+                        <button type="submit" class="btn btn-primary">Apply Filters</button>
+                    </div>
+                </form>
+
+                <% if (locals.summary) { %>
+                    <div class="report-section">
+                        <h2 style="font-size: var(--font-size-lg); margin-bottom: var(--space-4);">Current Library Status</h2>
+                        <div class="reports-grid">
+                            <div class="card metric-card">
+                                <div class="metric-icon"><i data-lucide="book"></i></div>
+                                <div class="metric-content">
+                                    <span class="metric-label">Total Books</span>
+                                    <span class="metric-value"><%= summary.global.total_books %></span>
+                                </div>
+                            </div>
+                            <div class="card metric-card">
+                                <div class="metric-icon"><i data-lucide="check-circle"></i></div>
+                                <div class="metric-content">
+                                    <span class="metric-label">Available Copies</span>
+                                    <span class="metric-value"><%= summary.global.available_copies %></span>
+                                </div>
+                            </div>
+                            <div class="card metric-card">
+                                <div class="metric-icon" style="background-color: var(--success-bg); color: var(--success);"><i data-lucide="book-open"></i></div>
+                                <div class="metric-content">
+                                    <span class="metric-label">Currently Issued</span>
+                                    <span class="metric-value"><%= summary.global.active_issues %></span>
+                                </div>
+                            </div>
+                            <div class="card metric-card">
+                                <div class="metric-icon" style="background-color: var(--danger-bg); color: var(--danger);"><i data-lucide="alert-circle"></i></div>
+                                <div class="metric-content">
+                                    <span class="metric-label">Currently Overdue</span>
+                                    <span class="metric-value"><%= summary.global.overdue_issues %></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="report-section">
+                        <h2 style="font-size: var(--font-size-lg); margin-bottom: var(--space-4);">Selected Period</h2>
+                        <div class="reports-grid">
+                            <div class="card metric-card">
+                                <div class="metric-icon" style="background-color: var(--success-bg); color: var(--success);"><i data-lucide="trending-up"></i></div>
+                                <div class="metric-content">
+                                    <span class="metric-label">Issues</span>
+                                    <span class="metric-value"><%= summary.period.issues_in_period %></span>
+                                </div>
+                            </div>
+                            <div class="card metric-card">
+                                <div class="metric-icon" style="background-color: var(--bg-color); color: var(--text-secondary); border: 1px solid var(--border-color);"><i data-lucide="corner-down-left"></i></div>
+                                <div class="metric-content">
+                                    <span class="metric-label">Returns</span>
+                                    <span class="metric-value"><%= summary.period.returns_in_period %></span>
+                                </div>
+                            </div>
+                            <div class="card metric-card">
+                                <div class="metric-icon" style="background-color: var(--warning-bg); color: var(--warning);"><i data-lucide="clock"></i></div>
+                                <div class="metric-content">
+                                    <span class="metric-label">Overdue Records</span>
+                                    <span class="metric-value"><%= summary.period.overdues_in_period %></span>
+                                </div>
+                            </div>
+                            <div class="card metric-card">
+                                <div class="metric-icon" style="background-color: var(--danger-bg); color: var(--danger);"><i data-lucide="indian-rupee"></i></div>
+                                <div class="metric-content">
+                                    <span class="metric-label">Fines Generated</span>
+                                    <span class="metric-value">₹<%= parseFloat(summary.period.fines_generated_in_period).toFixed(2) %></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="report-section">
+                        <h2 style="font-size: var(--font-size-lg); margin-bottom: var(--space-4);">Active Overdue Issues</h2>
+                        <% if (locals.overdues && overdues.length > 0) { %>
+                            <div class="card table-container">
+                                <table class="table responsive-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Book</th>
+                                            <th>Member</th>
+                                            <th>Issue Date</th>
+                                            <th>Due Date</th>
+                                            <th>Late Days</th>
+                                            <th>Current Fine</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% overdues.forEach(issue => { %>
+                                            <tr>
+                                                <td>
+                                                    <div style="font-weight: 500;"><%= issue.book_title %></div>
+                                                </td>
+                                                <td>
+                                                    <div style="font-weight: 500;"><%= issue.member_name %></div>
+                                                </td>
+                                                <td><%= new Date(issue.issue_date).toLocaleDateString() %></td>
+                                                <td>
+                                                    <span class="overdue-text"><%= new Date(issue.due_date).toLocaleDateString() %></span>
+                                                </td>
+                                                <td>
+                                                    <span class="overdue-text"><%= issue.lateDays %> days</span>
+                                                </td>
+                                                <td>
+                                                    <span class="overdue-text">₹<%= parseFloat(issue.displayFine).toFixed(2) %></span>
+                                                </td>
+                                            </tr>
+                                        <% }) %>
+                                    </tbody>
+                                </table>
+                            </div>
+                        <% } else { %>
+                            <div class="card" style="padding: var(--space-6); text-align: center; color: var(--text-secondary);">
+                                <i data-lucide="check-circle" style="width: 32px; height: 32px; color: var(--success); margin-bottom: var(--space-2);"></i>
+                                <p>No overdue books right now.</p>
+                            </div>
+                        <% } %>
+                    </div>
+
+                    <div class="report-section">
+                        <h2 style="font-size: var(--font-size-lg); margin-bottom: var(--space-4);">Detailed Circulation (Selected Period)</h2>
+                        <% if (locals.circulation && circulation.issues.length > 0) { %>
+                            <div class="card table-container">
+                                <table class="table responsive-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Book</th>
+                                            <th>Member</th>
+                                            <th>Issue Date</th>
+                                            <th>Due Date</th>
+                                            <th>Return Date</th>
+                                            <th>Status</th>
+                                            <th>Late Days</th>
+                                            <th>Fine</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% circulation.issues.forEach(issue => { %>
+                                            <tr>
+                                                <td><div style="font-weight: 500;"><%= issue.book_title %></div></td>
+                                                <td><div style="font-weight: 500;"><%= issue.member_name %></div></td>
+                                                <td><%= new Date(issue.issue_date).toLocaleDateString() %></td>
+                                                <td>
+                                                    <span class="<%= (issue.status === 'Overdue') ? 'overdue-text' : '' %>">
+                                                        <%= new Date(issue.due_date).toLocaleDateString() %>
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <% if (issue.return_date) { %>
+                                                        <%= new Date(issue.return_date).toLocaleDateString() %>
+                                                    <% } else { %>
+                                                        <span style="color: var(--text-muted);">-</span>
+                                                    <% } %>
+                                                </td>
+                                                <td>
+                                                    <% if (issue.status === 'Issued') { %>
+                                                        <span class="badge badge-success">Issued</span>
+                                                    <% } else if (issue.status === 'Returned') { %>
+                                                        <span class="badge" style="background: var(--bg-color); color: var(--text-secondary);">Returned</span>
+                                                    <% } else if (issue.status === 'Overdue') { %>
+                                                        <span class="badge badge-danger">Overdue</span>
+                                                    <% } %>
+                                                </td>
+                                                <td>
+                                                    <% if (issue.lateDays > 0) { %>
+                                                        <span class="<%= (issue.status === 'Overdue') ? 'overdue-text' : '' %>"><%= issue.lateDays %> days</span>
+                                                    <% } else { %>
+                                                        <span style="color: var(--text-muted);">0 days</span>
+                                                    <% } %>
+                                                </td>
+                                                <td>
+                                                    <% if (issue.displayFine > 0) { %>
+                                                        <span style="color: var(--danger); font-weight: 500;">₹<%= parseFloat(issue.displayFine).toFixed(2) %></span>
+                                                    <% } else { %>
+                                                        <span style="color: var(--text-muted);">₹0.00</span>
+                                                    <% } %>
+                                                </td>
+                                            </tr>
+                                        <% }) %>
+                                    </tbody>
+                                </table>
+                                
+                                <% if (circulation.totalPages > 1) { %>
+                                    <div class="pagination" style="padding: var(--space-4);">
+                                        <div class="pagination-info">
+                                            Showing page <%= page %> of <%= circulation.totalPages %> (<%= circulation.totalRows %> total records)
+                                        </div>
+                                        <div style="display: flex; gap: var(--space-2);">
+                                            <a href="/admin/reports?from_date=<%= from_date %>&to_date=<%= to_date %>&page=<%= Math.max(1, page - 1) %>" 
+                                               class="btn btn-secondary <%= page <= 1 ? 'disabled' : '' %>"
+                                               <%= page <= 1 ? 'aria-disabled="true" tabindex="-1"' : '' %>>
+                                                Previous
+                                            </a>
+                                            <a href="/admin/reports?from_date=<%= from_date %>&to_date=<%= to_date %>&page=<%= Math.min(circulation.totalPages, page + 1) %>" 
+                                               class="btn btn-secondary <%= page >= circulation.totalPages ? 'disabled' : '' %>"
+                                               <%= page >= circulation.totalPages ? 'aria-disabled="true" tabindex="-1"' : '' %>>
+                                                Next
+                                            </a>
+                                        </div>
+                                    </div>
+                                <% } %>
+                            </div>
+                        <% } else { %>
+                            <div class="card" style="padding: var(--space-6); text-align: center; color: var(--text-secondary);">
+                                <i data-lucide="inbox" style="width: 32px; height: 32px; color: var(--text-muted); margin-bottom: var(--space-2); opacity: 0.5;"></i>
+                                <p>No circulation records found for this period.</p>
+                            </div>
+                        <% } %>
+                    </div>
+                <% } %>
+            </main>
+        </div>
+        
+        <div class="sidebar-backdrop"></div>
+    </div>
+    <script src="/js/shell.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

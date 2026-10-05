@@ -1,0 +1,100 @@
+@media (max-width: 1199px) {
+    .container {
+        padding: 0 var(--space-4);
+    }
+}
+
+@media (max-width: 1023px) {
+    /* Auto collapse sidebar on tablet */
+    .sidebar {
+        width: 80px;
+    }
+    .brand-text, .link-text, .user-info {
+        display: none;
+    }
+    .sidebar-header, .sidebar-link, .user-profile {
+        justify-content: center;
+    }
+    .sidebar-link {
+        padding: var(--space-3);
+    }
+}
+
+@media (max-width: 767px) {
+    .app-layout {
+        flex-direction: column;
+    }
+    
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 280px;
+        max-width: 90vw;
+        z-index: 100;
+        transform: translateX(-100%);
+        transition: transform var(--transition-normal);
+        border-right: 1px solid var(--border-color);
+        display: flex;
+    }
+
+    .sidebar.open {
+        transform: translateX(0);
+    }
+    
+    /* Reveal text on mobile sidebar since it's full width overlay */
+    .brand-text, .link-text, .user-info {
+        display: block;
+    }
+    .sidebar-header {
+        justify-content: flex-start;
+    }
+    .sidebar-link {
+        justify-content: flex-start;
+        padding: var(--space-2) var(--space-3);
+    }
+    .user-profile {
+        justify-content: flex-start;
+    }
+
+    .sidebar-backdrop {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.4);
+        z-index: 90;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity var(--transition-normal);
+    }
+
+    .sidebar-backdrop.visible {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .grid-2 {
+        grid-template-columns: 1fr;
+    }
+    
+    .page-content {
+        padding: var(--space-4);
+    }
+
+    .topbar {
+        padding: 0 var(--space-4);
+    }
+    
+    .topbar-center {
+        display: none; /* Hide search on small screens for simplicity */
+    }
+
+    .nav-menu {
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+}

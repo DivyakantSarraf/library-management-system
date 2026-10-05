@@ -1,0 +1,50 @@
+<div class="sidebar" tabindex="-1">
+    <div class="sidebar-header">
+        <div class="sidebar-brand">
+            <i data-lucide="library" class="brand-icon"></i>
+            <span class="brand-text">Library Management System</span>
+        </div>
+    </div>
+    
+    <nav class="sidebar-nav" aria-label="Admin Navigation">
+        <a href="/admin" class="sidebar-link <%= locals.currentPath === '/admin' ? 'active' : '' %>" <%= locals.currentPath === '/admin' ? 'aria-current="page"' : '' %>>
+            <i data-lucide="layout-dashboard"></i>
+            <span class="link-text">Overview</span>
+        </a>
+        <a href="/admin/books" class="sidebar-link <%= locals.currentPath === '/admin/books' ? 'active' : '' %>" <%= locals.currentPath === '/admin/books' ? 'aria-current="page"' : '' %>>
+            <i data-lucide="book"></i>
+            <span class="link-text">Catalog</span>
+        </a>
+        <a href="/admin/members" class="sidebar-link <%= locals.currentPath === '/admin/members' ? 'active' : '' %>" <%= locals.currentPath === '/admin/members' ? 'aria-current="page"' : '' %>>
+            <i data-lucide="users"></i>
+            <span class="link-text">Members</span>
+        </a>
+        <a href="/admin/issues" class="sidebar-link <%= locals.currentPath === '/admin/issues' ? 'active' : '' %>" <%= locals.currentPath === '/admin/issues' ? 'aria-current="page"' : '' %>>
+            <i data-lucide="arrow-right-left"></i>
+            <span class="link-text">Circulation</span>
+        </a>
+        <a href="/admin/reports" class="sidebar-link <%= locals.currentPath === '/admin/reports' ? 'active' : '' %>" <%= locals.currentPath === '/admin/reports' ? 'aria-current="page"' : '' %>>
+            <i data-lucide="bar-chart-2"></i>
+            <span class="link-text">Reports</span>
+        </a>
+        
+        <div class="sidebar-divider"></div>
+        
+        <a href="#" class="sidebar-link">
+            <i data-lucide="settings"></i>
+            <span class="link-text">Settings</span>
+        </a>
+    </nav>
+    
+    <div class="sidebar-footer">
+        <div class="user-profile">
+            <div class="avatar">
+                <i data-lucide="shield"></i>
+            </div>
+            <div class="user-info">
+                <span class="user-name">Admin</span>
+                <span class="user-role">Administrator</span>
+            </div>
+        </div>
+    </div>
+</div>

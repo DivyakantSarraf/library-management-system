@@ -1,0 +1,39 @@
+<div class="sidebar" tabindex="-1">
+    <div class="sidebar-header">
+        <div class="sidebar-brand">
+            <i data-lucide="library" class="brand-icon"></i>
+            <span class="brand-text">Library Management System</span>
+        </div>
+    </div>
+    
+    <nav class="sidebar-nav" aria-label="Member Navigation">
+        <a href="/member" class="sidebar-link <%= locals.currentPath === '/member' ? 'active' : '' %>" <%= locals.currentPath === '/member' ? 'aria-current="page"' : '' %>>
+            <i data-lucide="layout-dashboard"></i>
+            <span class="link-text">Overview</span>
+        </a>
+        <a href="/member/books" class="sidebar-link <%= locals.currentPath === '/member/books' ? 'active' : '' %>" <%= locals.currentPath === '/member/books' ? 'aria-current="page"' : '' %>>
+            <i data-lucide="book-open"></i>
+            <span class="link-text">Browse Books</span>
+        </a>
+        <a href="/member/issues" class="sidebar-link <%= locals.currentPath === '/member/issues' ? 'active' : '' %>" <%= locals.currentPath === '/member/issues' ? 'aria-current="page"' : '' %>>
+            <i data-lucide="bookmark"></i>
+            <span class="link-text">My Books</span>
+        </a>
+        <a href="/member/profile" class="sidebar-link <%= locals.currentPath === '/member/profile' ? 'active' : '' %>" <%= locals.currentPath === '/member/profile' ? 'aria-current="page"' : '' %>>
+            <i data-lucide="user"></i>
+            <span class="link-text">Profile</span>
+        </a>
+    </nav>
+    
+    <div class="sidebar-footer">
+        <div class="user-profile">
+            <div class="avatar">
+                <i data-lucide="user"></i>
+            </div>
+            <div class="user-info">
+                <span class="user-name">Member</span>
+                <span class="user-role">Library Member</span>
+            </div>
+        </div>
+    </div>
+</div>

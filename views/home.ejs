@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('partials/head') %>
+    <title>Library Management System</title>
+</head>
+<body>
+    <div class="container fade-in">
+        <div style="padding-top: var(--space-12); text-align: center;">
+            <i data-lucide="library" style="width: 48px; height: 48px; color: var(--accent-primary); margin-bottom: var(--space-4);"></i>
+            <h1>Library Management System</h1>
+            <p style="margin-top: var(--space-4); margin-bottom: var(--space-8);">Welcome to the Library Management System.</p>
+            <div style="display: flex; gap: var(--space-4); justify-content: center;">
+                <a href="/admin" class="btn btn-primary">
+                    <i data-lucide="shield"></i> Admin Dashboard
+                </a>
+                <a href="/member" class="btn btn-secondary">
+                    <i data-lucide="users"></i> Member Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

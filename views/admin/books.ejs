@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('../partials/head') %>
+    <title>Catalog - Admin Panel</title>
+    <style>
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-4);
+            margin-bottom: var(--space-6);
+            align-items: center;
+            justify-content: space-between;
+        }
+        .toolbar-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-3);
+            flex: 1;
+        }
+        .search-field {
+            position: relative;
+            max-width: 300px;
+            flex: 1;
+            min-width: 200px;
+        }
+        .search-field input {
+            padding-left: var(--space-8);
+        }
+        .search-field i {
+            position: absolute;
+            left: var(--space-3);
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            width: 16px;
+        }
+        .select-filter {
+            padding: var(--space-2) var(--space-3);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            background-color: var(--surface-color);
+            color: var(--text-primary);
+            font-size: var(--font-size-body);
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--space-4) 0;
+            margin-top: var(--space-4);
+            border-top: 1px solid var(--border-color);
+        }
+        .pagination-info {
+            color: var(--text-secondary);
+            font-size: var(--font-size-meta);
+        }
+        .pagination-controls {
+            display: flex;
+            gap: var(--space-2);
+        }
+
+        /* Drawer */
+        .drawer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.4);
+            z-index: 1000;
+            display: none;
+            opacity: 0;
+            transition: opacity var(--transition-normal);
+        }
+        .drawer-overlay.visible {
+            display: block;
+            opacity: 1;
+        }
+        .drawer {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            bottom: 0;
+            width: 400px;
+            max-width: 100vw;
+            background-color: var(--surface-color);
+            z-index: 1001;
+            box-shadow: var(--shadow-lg);
+            transition: right var(--transition-normal);
+            display: flex;
+            flex-direction: column;
+        }
+        .drawer.open {
+            right: 0;
+        }
+        .drawer-header {
+            padding: var(--space-4) var(--space-6);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .drawer-body {
+            padding: var(--space-6);
+            overflow-y: auto;
+            flex: 1;
+        }
+        .drawer-footer {
+            padding: var(--space-4) var(--space-6);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: var(--space-3);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.4);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.visible {
+            display: flex;
+        }
+        .modal {
+            background-color: var(--surface-color);
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 400px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+        }
+        .modal-header {
+            padding: var(--space-4) var(--space-6);
+            border-bottom: 1px solid var(--border-color);
+        }
+        .modal-body {
+            padding: var(--space-6);
+        }
+        .modal-footer {
+            padding: var(--space-4) var(--space-6);
+            background-color: var(--bg-color);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: var(--space-3);
+        }
+
+        /* Overflow Menu */
+        .table-container {
+            overflow: visible; /* Prevent dropdown clipping */
+        }
+        .icon-btn {
+            padding: var(--space-2);
+            width: 32px;
+            height: 32px;
+        }
+        .overflow-menu-container {
+            position: relative;
+        }
+        .overflow-menu {
+            position: absolute;
+            right: 0;
+            top: 100%;
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-md);
+            min-width: 150px;
+            z-index: 10;
+            display: none;
+            flex-direction: column;
+            padding: var(--space-1) 0;
+        }
+        .overflow-menu.visible {
+            display: flex;
+        }
+        .overflow-item {
+            padding: var(--space-2) var(--space-4);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            color: var(--text-primary);
+            text-decoration: none;
+            background: none;
+            border: none;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            font-size: var(--font-size-body);
+        }
+        .overflow-item:hover {
+            background-color: var(--bg-color);
+        }
+        .overflow-item.danger {
+            color: var(--danger);
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            bottom: var(--space-6);
+            right: var(--space-6);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-2);
+        }
+        .toast {
+            padding: var(--space-3) var(--space-4);
+            border-radius: var(--radius-md);
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-md);
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            animation: slideUp var(--transition-normal);
+        }
+        .toast-success { border-left: 4px solid var(--success); }
+        .toast-error { border-left: 4px solid var(--danger); }
+        .toast-icon { width: 20px; height: 20px; }
+        .toast-success .toast-icon { color: var(--success); }
+        .toast-error .toast-icon { color: var(--danger); }
+
+        @media (max-width: 767px) {
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .search-field {
+                max-width: none;
+            }
+            .responsive-table th:not(:first-child), .responsive-table td:not(:first-child):not(:last-child) {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-layout fade-in">
+        <%- include('../partials/admin-sidebar') %>
+        
+        <div class="main-content">
+            <%- include('../partials/topbar') %>
+            
+            <main class="page-content slide-up">
+                <!-- Header -->
+                <div style="margin-bottom: var(--space-6);">
+                    <h1 style="font-size: var(--font-size-title);">Catalog</h1>
+                    <p style="color: var(--text-secondary); margin-top: var(--space-1);">Manage the library's book collection.</p>
+                </div>
+
+                <!-- Toast Notifications Logic via URL query -->
+                <div class="toast-container" id="toastContainer"></div>
+                
+                <!-- Toolbar -->
+                <div class="toolbar">
+                    <form method="GET" action="/admin/books" class="toolbar-filters" id="filterForm">
+                        <div class="search-field">
+                            <i data-lucide="search"></i>
+                            <input type="text" name="q" class="form-control" placeholder="Search by title, author, or ISBN" value="<%= locals.search || '' %>">
+                        </div>
+                        
+                        <select name="availability" class="select-filter" onchange="document.getElementById('filterForm').submit()">
+                            <option value="all" <%= locals.availability === 'all' ? 'selected' : '' %>>All Availability</option>
+                            <option value="available" <%= locals.availability === 'available' ? 'selected' : '' %>>Available Only</option>
+                            <option value="unavailable" <%= locals.availability === 'unavailable' ? 'selected' : '' %>>Unavailable</option>
+                        </select>
+
+                        <select name="category" class="select-filter" onchange="document.getElementById('filterForm').submit()">
+                            <option value="all">All Categories</option>
+                            <% if (locals.categories) { %>
+                                <% categories.forEach(cat => { %>
+                                    <option value="<%= cat %>" <%= locals.category === cat ? 'selected' : '' %>><%= cat %></option>
+                                <% }) %>
+                            <% } %>
+                        </select>
+
+                        <% if (locals.search || locals.availability !== 'all' || locals.category !== 'all') { %>
+                            <a href="/admin/books" class="btn btn-ghost" style="padding: 0 var(--space-2);">Clear Filters</a>
+                        <% } %>
+                    </form>
+
+                    <div>
+                        <button class="btn btn-primary" onclick="openAddDrawer()">
+                            <i data-lucide="plus"></i> Add Book
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Content Area -->
+                <div class="card" style="padding: 0;">
+                    <% if (locals.error && !locals.books) { %>
+                        <div style="padding: var(--space-10); text-align: center;">
+                            <i data-lucide="alert-triangle" style="width: 48px; height: 48px; color: var(--danger); margin-bottom: var(--space-4);"></i>
+                            <h3 style="font-size: var(--font-size-heading);">Error Loading Catalog</h3>
+                            <p style="color: var(--text-secondary); margin-top: var(--space-2);"><%= error %></p>
+                        </div>
+                    <% } else if (books.length === 0) { %>
+                        <div style="padding: var(--space-10) var(--space-6); text-align: center;">
+                            <% if (locals.search || locals.category !== 'all' || locals.availability !== 'all') { %>
+                                <i data-lucide="search" style="width: 48px; height: 48px; color: var(--text-muted); opacity: 0.5; margin-bottom: var(--space-4);"></i>
+                                <h3 style="font-size: var(--font-size-heading);">No books found</h3>
+                                <p style="color: var(--text-secondary); margin-top: var(--space-2);">Try adjusting your search or filters.</p>
+                                <a href="/admin/books" class="btn btn-secondary" style="margin-top: var(--space-4);">Clear Filters</a>
+                            <% } else { %>
+                                <i data-lucide="book" style="width: 48px; height: 48px; color: var(--text-muted); opacity: 0.5; margin-bottom: var(--space-4);"></i>
+                                <h3 style="font-size: var(--font-size-heading);">No books in the catalog yet</h3>
+                                <p style="color: var(--text-secondary); margin-top: var(--space-2);">Add your first book to start building the library collection.</p>
+                                <button class="btn btn-primary" style="margin-top: var(--space-4);" onclick="openAddDrawer()">Add Book</button>
+                            <% } %>
+                        </div>
+                    <% } else { %>
+                        <div class="table-container">
+                            <table class="table responsive-table">
+                                <thead>
+                                    <tr>
+                                        <th>Book</th>
+                                        <th>Author</th>
+                                        <th>ISBN</th>
+                                        <th>Category</th>
+                                        <th>Copies</th>
+                                        <th>Status</th>
+                                        <th style="width: 80px;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% books.forEach(book => { %>
+                                        <tr>
+                                            <td style="font-weight: 500;"><%= book.title %></td>
+                                            <td><%= book.author %></td>
+                                            <td><%= book.isbn %></td>
+                                            <td><%= book.category %></td>
+                                            <td><%= book.available_copies %></td>
+                                            <td>
+                                                <% if (book.available_copies > 0) { %>
+                                                    <span class="badge badge-success">Available</span>
+                                                <% } else { %>
+                                                    <span class="badge badge-danger">Unavailable</span>
+                                                <% } %>
+                                            </td>
+                                            <td>
+                                                <div class="overflow-menu-container">
+                                                    <button class="btn btn-ghost icon-btn" onclick="toggleMenu('<%= book.book_id %>')" aria-label="Book actions">
+                                                        <i data-lucide="more-vertical" style="width: 16px;"></i>
+                                                    </button>
+                                                    <div class="overflow-menu" id="menu-<%= book.book_id %>">
+                                                        <button class="overflow-item" onclick="openEditDrawer(<%= JSON.stringify(book) %>)">
+                                                            <i data-lucide="edit" style="width: 14px;"></i> Edit
+                                                        </button>
+                                                        <button class="overflow-item danger" onclick="confirmDelete('<%= book.book_id %>', '<%= book.title.replace(/'/g, "\\'") %>')">
+                                                            <i data-lucide="trash-2" style="width: 14px;"></i> Delete
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <% }) %>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        <div style="padding: 0 var(--space-6);">
+                            <div class="pagination">
+                                <div class="pagination-info">
+                                    Showing <%= (page - 1) * 10 + 1 %>–<%= Math.min(page * 10, totalRows) %> of <%= totalRows %> books
+                                </div>
+                                <div class="pagination-controls">
+                                    <a href="?q=<%= search %>&availability=<%= availability %>&category=<%= category %>&page=<%= page - 1 %>" 
+                                       class="btn btn-secondary" 
+                                       <%= page <= 1 ? 'disabled style="pointer-events:none; opacity:0.5;"' : '' %>>
+                                        Previous
+                                    </a>
+                                    <span style="display:flex; align-items:center; padding:0 var(--space-2); font-weight:500;">
+                                        Page <%= page %> of <%= totalPages %>
+                                    </span>
+                                    <a href="?q=<%= search %>&availability=<%= availability %>&category=<%= category %>&page=<%= page + 1 %>" 
+                                       class="btn btn-secondary"
+                                       <%= page >= totalPages ? 'disabled style="pointer-events:none; opacity:0.5;"' : '' %>>
+                                        Next
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    <% } %>
+                </div>
+            </main>
+        </div>
+        
+        <div class="sidebar-backdrop"></div>
+        
+        <!-- Add / Edit Drawer -->
+        <div class="drawer-overlay" id="formDrawerOverlay" onclick="closeDrawer()"></div>
+        <div class="drawer" id="formDrawer" aria-modal="true" role="dialog" aria-labelledby="drawerTitle">
+            <form id="bookForm" method="POST" action="/admin/books" onsubmit="return handleFormSubmit()">
+                <div class="drawer-header">
+                    <h2 id="drawerTitle" style="font-size: var(--font-size-heading);">Add Book</h2>
+                    <button type="button" class="btn btn-ghost icon-btn" onclick="closeDrawer()" aria-label="Close drawer">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+                <div class="drawer-body">
+                    <div class="form-group">
+                        <label class="form-label" for="title">Title *</label>
+                        <input type="text" id="title" name="title" class="form-control" required placeholder="Enter book title">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="author">Author *</label>
+                        <input type="text" id="author" name="author" class="form-control" required placeholder="Enter author name">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="isbn">ISBN *</label>
+                        <input type="text" id="isbn" name="isbn" class="form-control" required placeholder="Enter ISBN">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="category">Category *</label>
+                        <input type="text" id="category" name="category" class="form-control" required placeholder="e.g. Science Fiction">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="available_copies">Available Copies *</label>
+                        <input type="number" id="available_copies" name="available_copies" class="form-control" required min="0" step="1" value="1">
+                    </div>
+                </div>
+                <div class="drawer-footer">
+                    <button type="button" class="btn btn-ghost" onclick="closeDrawer()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">Save Book</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Delete Confirmation Modal -->
+        <div class="modal-overlay" id="deleteModalOverlay">
+            <div class="modal" role="dialog" aria-labelledby="deleteModalTitle" aria-modal="true">
+                <div class="modal-header">
+                    <h2 id="deleteModalTitle" style="font-size: var(--font-size-heading); color: var(--danger); display: flex; align-items: center; gap: var(--space-2);">
+                        <i data-lucide="alert-triangle"></i> Delete Book
+                    </h2>
+                </div>
+                <div class="modal-body">
+                    <p style="margin-bottom: var(--space-2);">Are you sure you want to delete <strong id="deleteBookTitle"></strong>?</p>
+                    <p style="font-size: var(--font-size-meta); color: var(--text-muted);">This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <form id="deleteForm" method="POST" action="">
+                        <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+                        <button type="submit" class="btn btn-danger" id="deleteSubmitBtn">Delete Book</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    
+    <script src="/js/shell.js"></script>
+    <script>
+        lucide.createIcons();
+
+        // Toast logic based on URL params
+        const urlParams = new URLSearchParams(window.location.search);
+        const errorMsg = urlParams.get('error');
+        const successMsg = urlParams.get('success');
+
+        if (errorMsg) showToast(errorMsg, 'error');
+        if (successMsg) showToast(successMsg, 'success');
+
+        function showToast(message, type) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            
+            const iconName = type === 'success' ? 'check-circle' : 'alert-circle';
+            toast.innerHTML = `
+                <i data-lucide="${iconName}" class="toast-icon"></i>
+                <div style="font-weight: 500;">${message}</div>
+            `;
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 200);
+            }, 5000);
+            
+            // Clean URL
+            const url = new URL(window.location);
+            url.searchParams.delete(type);
+            window.history.replaceState({}, '', url);
+        }
+
+        // Overflow Menu Logic
+        let activeMenu = null;
+        function toggleMenu(id) {
+            const menu = document.getElementById(`menu-${id}`);
+            if (activeMenu && activeMenu !== menu) {
+                activeMenu.classList.remove('visible');
+            }
+            if (menu.classList.contains('visible')) {
+                menu.classList.remove('visible');
+                activeMenu = null;
+            } else {
+                menu.classList.add('visible');
+                activeMenu = menu;
+            }
+        }
+
+        document.addEventListener('click', (e) => {
+            if (activeMenu && !e.target.closest('.overflow-menu-container')) {
+                activeMenu.classList.remove('visible');
+                activeMenu = null;
+            }
+        });
+
+        // Drawer Logic
+        const drawer = document.getElementById('formDrawer');
+        const drawerOverlay = document.getElementById('formDrawerOverlay');
+        const form = document.getElementById('bookForm');
+        const drawerTitle = document.getElementById('drawerTitle');
+
+        function openAddDrawer() {
+            drawerTitle.textContent = 'Add Book';
+            form.action = '/admin/books';
+            form.reset();
+            drawer.classList.add('open');
+            drawerOverlay.classList.add('visible');
+        }
+
+        function openEditDrawer(book) {
+            drawerTitle.textContent = 'Edit Book';
+            form.action = `/admin/books/${book.book_id}/update`;
+            
+            document.getElementById('title').value = book.title;
+            document.getElementById('author').value = book.author;
+            document.getElementById('isbn').value = book.isbn;
+            document.getElementById('category').value = book.category;
+            document.getElementById('available_copies').value = book.available_copies;
+
+            drawer.classList.add('open');
+            drawerOverlay.classList.add('visible');
+            if (activeMenu) activeMenu.classList.remove('visible');
+        }
+
+        function closeDrawer() {
+            drawer.classList.remove('open');
+            drawerOverlay.classList.remove('visible');
+        }
+
+        function handleFormSubmit() {
+            document.getElementById('submitBtn').textContent = 'Saving...';
+            document.getElementById('submitBtn').disabled = true;
+            return true;
+        }
+
+        // Delete Modal Logic
+        const deleteModal = document.getElementById('deleteModalOverlay');
+        const deleteForm = document.getElementById('deleteForm');
+
+        function confirmDelete(id, title) {
+            document.getElementById('deleteBookTitle').textContent = title;
+            deleteForm.action = `/admin/books/${id}/delete`;
+            deleteModal.classList.add('visible');
+            if (activeMenu) activeMenu.classList.remove('visible');
+        }
+
+        function closeDeleteModal() {
+            deleteModal.classList.remove('visible');
+        }
+
+        deleteForm.addEventListener('submit', () => {
+            document.getElementById('deleteSubmitBtn').textContent = 'Deleting...';
+            document.getElementById('deleteSubmitBtn').disabled = true;
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeDrawer();
+                closeDeleteModal();
+            }
+        });
+    </script>
+</body>
+</html>

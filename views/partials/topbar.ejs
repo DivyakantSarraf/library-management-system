@@ -1,0 +1,33 @@
+<div class="topbar">
+    <div class="topbar-left">
+        <button class="btn btn-ghost sidebar-toggle" aria-label="Toggle Navigation">
+            <i data-lucide="menu"></i>
+        </button>
+    </div>
+    
+    <div class="topbar-center">
+        <div class="search-container">
+            <i data-lucide="search" class="search-icon"></i>
+            <% if (locals.currentPath && locals.currentPath.startsWith('/admin')) { %>
+                <input type="text" class="form-control search-input" placeholder="Search books, members, issues...">
+            <% } else { %>
+                <input type="text" class="form-control search-input" placeholder="Search books...">
+            <% } %>
+        </div>
+    </div>
+    
+    <div class="topbar-right">
+        <button class="btn btn-ghost icon-btn" aria-label="Notifications">
+            <i data-lucide="bell"></i>
+        </button>
+        <button class="btn btn-ghost profile-trigger" aria-label="User Profile">
+            <div class="avatar-small">
+                <% if (locals.currentPath && locals.currentPath.startsWith('/admin')) { %>
+                    <i data-lucide="shield" style="width: 16px; height: 16px;"></i>
+                <% } else { %>
+                    <i data-lucide="user" style="width: 16px; height: 16px;"></i>
+                <% } %>
+            </div>
+        </button>
+    </div>
+</div>
