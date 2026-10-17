@@ -397,7 +397,11 @@
                                                             <i data-lucide="more-vertical" style="width: 16px;"></i>
                                                         </button>
                                                         <div class="overflow-menu" id="menu-<%= issue.issue_id %>">
-                                                            <button class="overflow-item" onclick="confirmReturn('<%= issue.issue_id %>', '<%= issue.book_title.replace(/'/g, "\\'") %>', '<%= issue.member_name.replace(/'/g, "\\'") %>')">
+                                                            <button class="overflow-item" 
+                                                                data-id="<%= issue.issue_id %>"
+                                                                data-book="<%= issue.book_title %>"
+                                                                data-member="<%= issue.member_name %>"
+                                                                onclick="confirmReturnFromBtn(this)">
                                                                 <i data-lucide="corner-down-left" style="width: 14px;"></i> Return Book
                                                             </button>
                                                         </div>
@@ -620,6 +624,13 @@
         // Return Modal Logic
         const returnModal = document.getElementById('returnModalOverlay');
         const returnForm = document.getElementById('returnForm');
+
+        function confirmReturnFromBtn(btn) {
+            const id = btn.getAttribute('data-id');
+            const bookTitle = btn.getAttribute('data-book');
+            const memberName = btn.getAttribute('data-member');
+            confirmReturn(id, bookTitle, memberName);
+        }
 
         function confirmReturn(id, bookTitle, memberName) {
             document.getElementById('returnBookTitle').textContent = bookTitle;
