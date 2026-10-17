@@ -16,6 +16,17 @@ class IssueModel {
         return { lateDays, fineAmount: lateDays * 5 };
     }
 
+    static getLocalDateString(dateInput = new Date()) {
+        if (typeof dateInput === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
+            return dateInput;
+        }
+        const d = new Date(dateInput);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
     static async syncOverdueStatuses() {
         const query = `
             UPDATE issues 
@@ -176,7 +187,7 @@ class IssueModel {
         }
     }
 
-    static async returnIssue(issue_id) {
+    static async returnIssue(issue_id, returnDateInput = null) {
         const client = await pool.connect();
 
         try {
@@ -197,8 +208,8 @@ class IssueModel {
             await client.query('SELECT book_id FROM books WHERE book_id = $1 FOR UPDATE', [issue.book_id]);
 
             // 3. Update the issue record
-            // Use current date for return_date
-            const returnDate = new Date().toISOString().split('T')[0];
+            // Use local calendar date for return_date to reflect intended application business date
+            const returnDate = returnDateInput ? this.getLocalDateString(returnDateInput) : this.getLocalDateString();
             const { fineAmount } = this.calculateFine(issue.due_date, returnDate);
 
             await client.query(

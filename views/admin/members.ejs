@@ -350,10 +350,27 @@
                                                         <i data-lucide="more-vertical" style="width: 16px;"></i>
                                                     </button>
                                                     <div class="overflow-menu" id="menu-<%= member.member_id %>">
-                                                        <button class="overflow-item" onclick="openEditDrawer(<%= JSON.stringify(member) %>)">
+                                                        <% 
+                                                            let formattedMemDate = '';
+                                                            if (member.membership_date) {
+                                                                const md = new Date(member.membership_date);
+                                                                const yr = md.getFullYear();
+                                                                const mo = String(md.getMonth() + 1).padStart(2, '0');
+                                                                const da = String(md.getDate()).padStart(2, '0');
+                                                                formattedMemDate = yr + '-' + mo + '-' + da;
+                                                            }
+                                                        %>
+                                                        <button class="overflow-item" 
+                                                            data-id="<%= member.member_id %>"
+                                                            data-name="<%= member.name %>"
+                                                            data-email="<%= member.email %>"
+                                                            data-phone="<%= member.phone || '' %>"
+                                                            data-address="<%= member.address || '' %>"
+                                                            data-date="<%= formattedMemDate %>"
+                                                            onclick="openEditDrawerFromBtn(this)">
                                                             <i data-lucide="edit" style="width: 14px;"></i> Edit
                                                         </button>
-                                                        <button class="overflow-item danger" onclick="confirmDelete('<%= member.member_id %>', '<%= member.name.replace(/'/g, "\\'") %>')">
+                                                        <button class="overflow-item danger" data-id="<%= member.member_id %>" data-name="<%= member.name %>" onclick="confirmDelete(this.getAttribute('data-id'), this.getAttribute('data-name'))">
                                                             <i data-lucide="trash-2" style="width: 14px;"></i> Delete
                                                         </button>
                                                     </div>
@@ -530,20 +547,51 @@
             drawerTitle.textContent = 'Add Member';
             form.action = '/admin/members';
             form.reset();
-            document.getElementById('membership_date').value = new Date().toISOString().split('T')[0];
+            const d = new Date();
+            const yr = d.getFullYear();
+            const mo = String(d.getMonth() + 1).padStart(2, '0');
+            const da = String(d.getDate()).padStart(2, '0');
+            document.getElementById('membership_date').value = `${yr}-${mo}-${da}`;
             drawer.classList.add('open');
             drawerOverlay.classList.add('visible');
+        }
+
+        function openEditDrawerFromBtn(btn) {
+            const member = {
+                member_id: btn.getAttribute('data-id'),
+                name: btn.getAttribute('data-name'),
+                email: btn.getAttribute('data-email'),
+                phone: btn.getAttribute('data-phone'),
+                address: btn.getAttribute('data-address'),
+                membership_date: btn.getAttribute('data-date')
+            };
+            openEditDrawer(member);
         }
 
         function openEditDrawer(member) {
             drawerTitle.textContent = 'Edit Member';
             form.action = `/admin/members/${member.member_id}/update`;
             
-            document.getElementById('name').value = member.name;
-            document.getElementById('email').value = member.email;
+            document.getElementById('name').value = member.name || '';
+            document.getElementById('email').value = member.email || '';
             document.getElementById('phone').value = member.phone || '';
             document.getElementById('address').value = member.address || '';
-            document.getElementById('membership_date').value = member.membership_date.split('T')[0];
+            
+            let dateVal = '';
+            if (member.membership_date) {
+                if (typeof member.membership_date === 'string' && member.membership_date.includes('T')) {
+                    dateVal = member.membership_date.split('T')[0];
+                } else if (typeof member.membership_date === 'string') {
+                    dateVal = member.membership_date;
+                } else {
+                    const d = new Date(member.membership_date);
+                    const yr = d.getFullYear();
+                    const mo = String(d.getMonth() + 1).padStart(2, '0');
+                    const da = String(d.getDate()).padStart(2, '0');
+                    dateVal = yr + '-' + mo + '-' + da;
+                }
+            }
+            document.getElementById('membership_date').value = dateVal;
 
             drawer.classList.add('open');
             drawerOverlay.classList.add('visible');

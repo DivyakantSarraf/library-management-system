@@ -589,12 +589,18 @@
         
         function openIssueDrawer() {
             form.reset();
+            const formatLocal = (d) => {
+                const yr = d.getFullYear();
+                const mo = String(d.getMonth() + 1).padStart(2, '0');
+                const da = String(d.getDate()).padStart(2, '0');
+                return `${yr}-${mo}-${da}`;
+            };
             const today = new Date();
             const defaultDue = new Date();
             defaultDue.setDate(defaultDue.getDate() + 14); // 14 days default
             
-            document.getElementById('issue_date').value = today.toISOString().split('T')[0];
-            document.getElementById('due_date').value = defaultDue.toISOString().split('T')[0];
+            document.getElementById('issue_date').value = formatLocal(today);
+            document.getElementById('due_date').value = formatLocal(defaultDue);
             
             drawer.classList.add('open');
             drawerOverlay.classList.add('visible');

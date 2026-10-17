@@ -1,15 +1,16 @@
 const ReportModel = require('../models/reportModel');
+const IssueModel = require('../models/issueModel');
 
 class ReportController {
     static async getReports(req, res) {
         try {
-            // Default date range: Last 30 days up to today
+            // Default date range: Last 30 days up to today in local calendar date
             const today = new Date();
             const thirtyDaysAgo = new Date(today);
             thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-            const defaultTo = today.toISOString().split('T')[0];
-            const defaultFrom = thirtyDaysAgo.toISOString().split('T')[0];
+            const defaultTo = IssueModel.getLocalDateString(today);
+            const defaultFrom = IssueModel.getLocalDateString(thirtyDaysAgo);
 
             let { from_date, to_date, page } = req.query;
 

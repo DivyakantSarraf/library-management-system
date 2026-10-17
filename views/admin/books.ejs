@@ -355,10 +355,20 @@
                                                         <i data-lucide="more-vertical" style="width: 16px;"></i>
                                                     </button>
                                                     <div class="overflow-menu" id="menu-<%= book.book_id %>">
-                                                        <button class="overflow-item" onclick="openEditDrawer(<%= JSON.stringify(book) %>)">
+                                                        <button class="overflow-item" 
+                                                            data-id="<%= book.book_id %>"
+                                                            data-title="<%= book.title %>"
+                                                            data-author="<%= book.author %>"
+                                                            data-isbn="<%= book.isbn %>"
+                                                            data-category="<%= book.category %>"
+                                                            data-copies="<%= book.available_copies %>"
+                                                            onclick="openEditDrawerFromBtn(this)">
                                                             <i data-lucide="edit" style="width: 14px;"></i> Edit
                                                         </button>
-                                                        <button class="overflow-item danger" onclick="confirmDelete('<%= book.book_id %>', '<%= book.title.replace(/'/g, "\\'") %>')">
+                                                        <button class="overflow-item danger" 
+                                                            data-id="<%= book.book_id %>"
+                                                            data-title="<%= book.title %>"
+                                                            onclick="confirmDeleteFromBtn(this)">
                                                             <i data-lucide="trash-2" style="width: 14px;"></i> Delete
                                                         </button>
                                                     </div>
@@ -539,15 +549,27 @@
             drawerOverlay.classList.add('visible');
         }
 
+        function openEditDrawerFromBtn(btn) {
+            const book = {
+                book_id: btn.getAttribute('data-id'),
+                title: btn.getAttribute('data-title'),
+                author: btn.getAttribute('data-author'),
+                isbn: btn.getAttribute('data-isbn'),
+                category: btn.getAttribute('data-category'),
+                available_copies: btn.getAttribute('data-copies')
+            };
+            openEditDrawer(book);
+        }
+
         function openEditDrawer(book) {
             drawerTitle.textContent = 'Edit Book';
             form.action = `/admin/books/${book.book_id}/update`;
             
-            document.getElementById('title').value = book.title;
-            document.getElementById('author').value = book.author;
-            document.getElementById('isbn').value = book.isbn;
-            document.getElementById('category').value = book.category;
-            document.getElementById('available_copies').value = book.available_copies;
+            document.getElementById('title').value = book.title || '';
+            document.getElementById('author').value = book.author || '';
+            document.getElementById('isbn').value = book.isbn || '';
+            document.getElementById('category').value = book.category || '';
+            document.getElementById('available_copies').value = book.available_copies !== undefined ? book.available_copies : 0;
 
             drawer.classList.add('open');
             drawerOverlay.classList.add('visible');
@@ -568,6 +590,12 @@
         // Delete Modal Logic
         const deleteModal = document.getElementById('deleteModalOverlay');
         const deleteForm = document.getElementById('deleteForm');
+
+        function confirmDeleteFromBtn(btn) {
+            const id = btn.getAttribute('data-id');
+            const title = btn.getAttribute('data-title');
+            confirmDelete(id, title);
+        }
 
         function confirmDelete(id, title) {
             document.getElementById('deleteBookTitle').textContent = title;
