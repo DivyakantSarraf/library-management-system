@@ -268,7 +268,7 @@
                     <form method="GET" action="/admin/books" class="toolbar-filters" id="filterForm">
                         <div class="search-field">
                             <i data-lucide="search"></i>
-                            <input type="text" name="q" class="form-control" placeholder="Search by title, author, or ISBN" value="<%= locals.search || '' %>">
+                            <input type="text" name="q" class="form-control" placeholder="Search by title, author, or ISBN" value="<%= locals.search || '' %>" aria-label="Search catalog">
                         </div>
                         
                         <select name="availability" class="select-filter" onchange="document.getElementById('filterForm').submit()">

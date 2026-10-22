@@ -269,7 +269,7 @@
                     <form method="GET" action="/admin/members" class="toolbar-filters" id="filterForm">
                         <div class="search-field">
                             <i data-lucide="search"></i>
-                            <input type="text" name="q" class="form-control" placeholder="Search by name, email, or phone" value="<%= locals.search || '' %>">
+                            <input type="text" name="q" class="form-control" placeholder="Search by name, email, or phone" value="<%= locals.search || '' %>" aria-label="Search members">
                         </div>
                         
                         <% if (locals.search) { %>
