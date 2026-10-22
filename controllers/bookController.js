@@ -1,5 +1,13 @@
 const BookModel = require('../models/bookModel');
 
+const parseBookInput = ({ title, author, isbn, category, available_copies }) => ({
+    title: title.trim(),
+    author: author.trim(),
+    isbn: isbn.trim(),
+    category: category.trim(),
+    available_copies: parseInt(available_copies, 10)
+});
+
 exports.getBooks = async (req, res) => {
     try {
         const search = req.query.q || '';
@@ -55,13 +63,7 @@ exports.addBook = async (req, res) => {
             throw new Error('INVALID_INPUT');
         }
 
-        await BookModel.addBook({
-            title: title.trim(),
-            author: author.trim(),
-            isbn: isbn.trim(),
-            category: category.trim(),
-            available_copies: parseInt(available_copies, 10)
-        });
+        await BookModel.addBook(parseBookInput(req.body));
 
         // Normally we'd use flash messages and redirect, but passing query params directly for this simple implementation
         res.redirect('/admin/books?success=Book+added+successfully');
@@ -88,13 +90,7 @@ exports.updateBook = async (req, res) => {
             throw new Error('INVALID_INPUT');
         }
 
-        await BookModel.updateBook(book_id, {
-            title: title.trim(),
-            author: author.trim(),
-            isbn: isbn.trim(),
-            category: category.trim(),
-            available_copies: parseInt(available_copies, 10)
-        });
+        await BookModel.updateBook(book_id, parseBookInput(req.body));
 
         res.redirect('/admin/books?success=Book+updated+successfully');
     } catch (err) {
