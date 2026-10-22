@@ -1,5 +1,15 @@
 const MemberModel = require('../models/memberModel');
 
+const parseMemberInput = (name, email, phone, address, membership_date) => {
+    return {
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        phone: phone ? phone.trim() : null,
+        address: address ? address.trim() : null,
+        membership_date
+    };
+};
+
 exports.getMembers = async (req, res) => {
     try {
         const search = req.query.q || '';
@@ -43,13 +53,7 @@ exports.addMember = async (req, res) => {
             throw new Error('INVALID_INPUT');
         }
 
-        await MemberModel.addMember({
-            name: name.trim(),
-            email: email.trim().toLowerCase(),
-            phone: phone ? phone.trim() : null,
-            address: address ? address.trim() : null,
-            membership_date
-        });
+        await MemberModel.addMember(parseMemberInput(name, email, phone, address, membership_date));
 
         res.redirect('/admin/members?success=Member+added+successfully');
     } catch (err) {
@@ -75,13 +79,7 @@ exports.updateMember = async (req, res) => {
             throw new Error('INVALID_INPUT');
         }
 
-        await MemberModel.updateMember(member_id, {
-            name: name.trim(),
-            email: email.trim().toLowerCase(),
-            phone: phone ? phone.trim() : null,
-            address: address ? address.trim() : null,
-            membership_date
-        });
+        await MemberModel.updateMember(member_id, parseMemberInput(name, email, phone, address, membership_date));
 
         res.redirect('/admin/members?success=Member+updated+successfully');
     } catch (err) {
