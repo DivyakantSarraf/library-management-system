@@ -6,21 +6,173 @@
 </head>
 <body>
     <div class="app-layout fade-in">
-        <%- include('../partials/member-sidebar') %>
+        <%- include('../partials/member-sidebar', { currentPath: '/member/books' }) %>
         
         <div class="main-content">
             <%- include('../partials/topbar') %>
             
             <main class="page-content slide-up">
-                <h1 style="font-size: var(--font-size-title); margin-bottom: var(--space-6);">Browse Books</h1>
-                <div class="card">
-                    <p>Search and browse available library books here.</p>
+                <% 
+                    const hasActiveFilters = Boolean((locals.search && search.trim() !== '') || (locals.availability && availability !== 'all') || (locals.category && category !== 'all'));
+                %>
+
+                <!-- Shared Page Header -->
+                <%- include('../partials/page-header', {
+                    title: 'Browse Books',
+                    description: "Explore the library's catalog and check real-time availability.",
+                    breadcrumbs: [
+                        { label: 'Portal', href: '/member' },
+                        { label: 'Browse Books' }
+                    ]
+                }) %>
+
+                <!-- Search & Filters Toolbar -->
+                <div class="filter-toolbar">
+                    <form method="GET" action="/member/books" class="catalog-filter-form" id="catalogFilterForm" role="search">
+
+                        <div class="search-field">
+                            <label for="catalog-search" class="sr-only">Search by title, author, or ISBN</label>
+                            <i data-lucide="search" aria-hidden="true"></i>
+                            <input type="text" id="catalog-search" name="q" class="form-control" placeholder="Search by title, author, or ISBN..." value="<%= locals.search || '' %>" autocomplete="off">
+                        </div>
+                        
+                        <div class="filter-select-wrapper">
+                            <label for="filter-availability" class="sr-only">Filter by Availability</label>
+                            <select id="filter-availability" name="availability" class="select-filter" aria-label="Filter by availability">
+                                <option value="all" <%= (!locals.availability || locals.availability === 'all') ? 'selected' : '' %>>All Availability</option>
+                                <option value="available" <%= locals.availability === 'available' ? 'selected' : '' %>>Available Only</option>
+                                <option value="unavailable" <%= locals.availability === 'unavailable' ? 'selected' : '' %>>Out of Stock</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-select-wrapper">
+                            <label for="filter-category" class="sr-only">Filter by Category</label>
+                            <select id="filter-category" name="category" class="select-filter" aria-label="Filter by category">
+                                <option value="all" <%= (!locals.category || locals.category === 'all') ? 'selected' : '' %>>All Categories</option>
+                                <% if (locals.categories && categories.length > 0) { %>
+                                    <% categories.forEach(cat => { %>
+                                        <option value="<%= cat %>" <%= locals.category === cat ? 'selected' : '' %>><%= cat %></option>
+                                    <% }) %>
+                                <% } %>
+                            </select>
+                        </div>
+
+                        <div class="filter-actions">
+                            <button type="submit" class="btn btn-secondary">
+                                <i data-lucide="filter" aria-hidden="true"></i>
+                                <span>Apply Filters</span>
+                            </button>
+
+                            <% if (hasActiveFilters) { %>
+                                <a href="/member/books" class="btn btn-ghost" aria-label="Reset all search and filter criteria">
+                                    <i data-lucide="x" aria-hidden="true"></i>
+                                    <span>Reset Filters</span>
+                                </a>
+                            <% } %>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Catalog Content Card -->
+                <div class="card" style="padding: 0; overflow: hidden;">
+                    <% if (locals.error) { %>
+                        <div class="alert alert-danger" style="margin: var(--space-6);" role="alert">
+                            <i data-lucide="alert-triangle" class="alert-icon" aria-hidden="true"></i>
+                            <div class="alert-content">
+                                <div class="alert-title">Unable to load catalog</div>
+                                <div class="alert-message"><%= error %></div>
+                            </div>
+                        </div>
+                    <% } else if (!locals.books || books.length === 0) { %>
+                        <div class="empty-state">
+                            <div class="empty-state-icon">
+                                <i data-lucide="book-open" aria-hidden="true"></i>
+                            </div>
+                            <h3 class="empty-state-title">No books found</h3>
+                            <p class="empty-state-text">
+                                <% if (hasActiveFilters) { %>
+                                    We couldn't find any books matching your criteria. Try adjusting your filters or search keywords.
+                                <% } else { %>
+                                    There are currently no books in the library catalog.
+                                <% } %>
+                            </p>
+                            <% if (hasActiveFilters) { %>
+                                <a href="/member/books" class="btn btn-secondary">
+                                    <i data-lucide="rotate-ccw" aria-hidden="true"></i>
+                                    <span>Reset Filters</span>
+                                </a>
+                            <% } %>
+                        </div>
+                    <% } else { %>
+                        <div class="table-container" style="border: none; border-radius: 0;">
+                            <table class="table books-table" aria-label="Library Books Catalog">
+                                <caption class="sr-only">Library Books Catalog - Browse and search available books</caption>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Book Title</th>
+                                        <th scope="col">Author</th>
+                                        <th scope="col">ISBN</th>
+                                        <th scope="col">Category</th>
+                                        <th scope="col" style="text-align: right;">Availability</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% books.forEach(book => { %>
+                                        <tr>
+                                            <td>
+                                                <div class="book-title-cell">
+                                                    <div class="book-icon-wrapper" aria-hidden="true">
+                                                        <i data-lucide="book"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="book-title"><%= book.title %></div>
+                                                        <div class="book-id-meta">ID: #<%= book.book_id %></div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td data-label="Author">
+                                                <span style="color: var(--text-secondary);"><%= book.author %></span>
+                                            </td>
+                                            <td data-label="ISBN">
+                                                <span class="book-isbn"><%= book.isbn %></span>
+                                            </td>
+                                            <td data-label="Category">
+                                                <span class="badge-category"><%= book.category || 'General' %></span>
+                                            </td>
+                                            <td data-label="Availability" class="book-avail-cell" style="text-align: right;">
+                                                <%- include('../partials/status-badge', {
+                                                    status: book.available_copies > 0 ? 'Available' : 'Out of Stock',
+                                                    count: book.available_copies
+                                                }) %>
+                                            </td>
+                                        </tr>
+                                    <% }) %>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Shared Pagination -->
+                        <%- include('../partials/pagination', {
+                            page: page,
+                            totalPages: totalPages,
+                            totalRows: totalRows,
+                            limit: locals.limit || 10,
+                            baseUrl: '/member/books',
+                            itemLabel: 'books',
+                            queryParams: {
+                                q: locals.search || '',
+                                availability: locals.availability || 'all',
+                                category: locals.category || 'all'
+                            }
+                        }) %>
+                    <% } %>
                 </div>
             </main>
         </div>
         
         <div class="sidebar-backdrop"></div>
     </div>
+    
     <script src="/js/shell.js"></script>
     <script>
         lucide.createIcons();

@@ -134,3 +134,18 @@ CREATE INDEX idx_issues_book
 
 CREATE INDEX idx_issues_status
     ON issues(status);
+
+
+-- ============================================
+-- 5. SESSIONS TABLE (PostgreSQL Session Store)
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS "session" (
+    "sid" VARCHAR NOT NULL COLLATE "default",
+    "sess" JSON NOT NULL,
+    "expire" TIMESTAMP(6) NOT NULL,
+    CONSTRAINT "session_pkey" PRIMARY KEY ("sid")
+);
+
+CREATE INDEX IF NOT EXISTS "IDX_session_expire"
+    ON "session"("expire");

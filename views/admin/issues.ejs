@@ -450,6 +450,7 @@
         <div class="drawer-overlay" id="formDrawerOverlay" onclick="closeDrawer()"></div>
         <div class="drawer" id="formDrawer" aria-modal="true" role="dialog" aria-labelledby="drawerTitle">
             <form id="issueForm" method="POST" action="/admin/issues" onsubmit="return handleFormSubmit()">
+                <input type="hidden" name="_csrf" value="<%= locals.csrfToken || '' %>">
                 <div class="drawer-header">
                     <h2 id="drawerTitle" style="font-size: var(--font-size-heading);">Issue Book</h2>
                     <button type="button" class="btn btn-ghost icon-btn" onclick="closeDrawer()" aria-label="Close drawer">
@@ -518,6 +519,7 @@
                 </div>
                 <div class="modal-footer">
                     <form id="returnForm" method="POST" action="">
+                        <input type="hidden" name="_csrf" value="<%= locals.csrfToken || '' %>">
                         <button type="button" class="btn btn-secondary" onclick="closeReturnModal()">Cancel</button>
                         <button type="submit" class="btn btn-primary" id="returnSubmitBtn">Confirm Return</button>
                     </form>

@@ -31,9 +31,15 @@
                 <i data-lucide="user"></i>
             </div>
             <div class="user-info">
-                <span class="user-name">Member</span>
+                <span class="user-name"><%= locals.currentMember && currentMember.name ? currentMember.name : (locals.currentUser && currentUser.name ? currentUser.name : 'Member') %></span>
                 <span class="user-role">Library Member</span>
             </div>
+            <form action="/logout" method="POST" style="margin-left: auto;">
+                <input type="hidden" name="_csrf" value="<%= locals.csrfToken || '' %>">
+                <button type="submit" class="btn btn-ghost icon-btn" title="Sign Out" aria-label="Sign Out">
+                    <i data-lucide="log-out" style="width: 18px; height: 18px;"></i>
+                </button>
+            </form>
         </div>
     </div>
 </div>

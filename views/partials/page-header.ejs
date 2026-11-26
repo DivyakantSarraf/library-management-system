@@ -1,0 +1,39 @@
+<%
+    const headerTitle = locals.title || 'Overview';
+    const headerSubtitle = locals.description || locals.subtitle || null;
+    const headerBreadcrumbs = Array.isArray(locals.breadcrumbs) ? locals.breadcrumbs : [];
+    const headerAction = (locals.action && locals.action.href && locals.action.label) ? locals.action : null;
+%>
+<div class="page-header">
+    <div class="page-header-content">
+        <% if (headerBreadcrumbs.length > 0) { %>
+            <nav aria-label="Breadcrumb" class="breadcrumbs">
+                <ol class="breadcrumb-list">
+                    <% headerBreadcrumbs.forEach((crumb, idx) => { %>
+                        <li class="breadcrumb-item <%= idx === headerBreadcrumbs.length - 1 ? 'active' : '' %>" <%= idx === headerBreadcrumbs.length - 1 ? 'aria-current="page"' : '' %>>
+                            <% if (crumb.href && idx < headerBreadcrumbs.length - 1) { %>
+                                <a href="<%= crumb.href %>"><%= crumb.label %></a>
+                            <% } else { %>
+                                <span><%= crumb.label %></span>
+                            <% } %>
+                        </li>
+                    <% }) %>
+                </ol>
+            </nav>
+        <% } %>
+        <h1 class="page-title"><%= headerTitle %></h1>
+        <% if (headerSubtitle) { %>
+            <p class="page-subtitle"><%= headerSubtitle %></p>
+        <% } %>
+    </div>
+    <% if (headerAction) { %>
+        <div class="page-header-actions">
+            <a href="<%= headerAction.href %>" class="btn <%= headerAction.variant || 'btn-secondary' %>">
+                <% if (headerAction.icon) { %>
+                    <i data-lucide="<%= headerAction.icon %>" aria-hidden="true"></i>
+                <% } %>
+                <span><%= headerAction.label %></span>
+            </a>
+        </div>
+    <% } %>
+</div>

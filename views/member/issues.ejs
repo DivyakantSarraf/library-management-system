@@ -6,21 +6,250 @@
 </head>
 <body>
     <div class="app-layout fade-in">
-        <%- include('../partials/member-sidebar') %>
+        <%- include('../partials/member-sidebar', { currentPath: '/member/issues' }) %>
         
         <div class="main-content">
             <%- include('../partials/topbar') %>
             
             <main class="page-content slide-up">
-                <h1 style="font-size: var(--font-size-title); margin-bottom: var(--space-6);">My Books</h1>
-                <div class="card">
-                    <p>View your currently borrowed books and history here.</p>
+                <% 
+                    const hasActiveFilters = Boolean((locals.search && search.trim() !== '') || (locals.status && status !== 'all'));
+
+                    function formatSafeDate(d) {
+                        if (!d) return '-';
+                        const date = new Date(d);
+                        if (isNaN(date.getTime())) return '-';
+                        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                    }
+                %>
+
+                <!-- Shared Page Header -->
+                <%- include('../partials/page-header', {
+                    title: 'My Books',
+                    description: 'Track your currently borrowed books, loan due dates, and return history.',
+                    breadcrumbs: [
+                        { label: 'Portal', href: '/member' },
+                        { label: 'My Books' }
+                    ]
+                }) %>
+
+                <!-- Compact Summary Bar -->
+                <% if (locals.metrics) { %>
+                    <div class="stat-card-grid cols-4" role="region" aria-label="Circulation Summary">
+                        <div class="stat-card">
+                            <div class="stat-card-icon primary" aria-hidden="true">
+                                <i data-lucide="book-open"></i>
+                            </div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Active Loans</span>
+                                <span class="stat-card-value"><%= metrics.activeLoans %></span>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-card-icon <%= metrics.overdueLoans > 0 ? 'danger' : 'primary' %>" aria-hidden="true">
+                                <i data-lucide="alert-triangle"></i>
+                            </div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Overdue Books</span>
+                                <span class="stat-card-value <%= metrics.overdueLoans > 0 ? 'alert-value' : '' %>">
+                                    <%= metrics.overdueLoans %>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-card-icon success" aria-hidden="true">
+                                <i data-lucide="history"></i>
+                            </div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Total Borrowed</span>
+                                <span class="stat-card-value"><%= metrics.totalBorrowed %></span>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-card-icon <%= metrics.totalOverdueFine > 0 ? 'danger' : 'success' %>" aria-hidden="true">
+                                <i data-lucide="<%= metrics.totalOverdueFine > 0 ? 'alert-circle' : 'check-circle' %>"></i>
+                            </div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Outstanding Fines</span>
+                                <span class="stat-card-value <%= metrics.totalOverdueFine > 0 ? 'alert-value' : '' %>">
+                                    ₹<%= parseFloat(metrics.totalOverdueFine).toFixed(2) %>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                <% } %>
+
+                <!-- Toolbar & Filters -->
+                <div class="filter-toolbar">
+                    <form method="GET" action="/member/issues" class="catalog-filter-form" id="issueFilterForm" role="search">
+                        <div class="search-field">
+                            <label for="issues-search" class="sr-only">Search by title, author, or ISBN</label>
+                            <i data-lucide="search" aria-hidden="true"></i>
+                            <input type="text" id="issues-search" name="q" class="form-control" placeholder="Search by title, author, or ISBN..." value="<%= locals.search || '' %>" autocomplete="off">
+                        </div>
+                        
+                        <div class="filter-select-wrapper">
+                            <label for="filter-status" class="sr-only">Filter by Loan Status</label>
+                            <select id="filter-status" name="status" class="select-filter" aria-label="Filter by loan status">
+                                <option value="all" <%= (!locals.status || locals.status === 'all') ? 'selected' : '' %>>All Statuses</option>
+                                <option value="Issued" <%= locals.status === 'Issued' ? 'selected' : '' %>>Currently Issued</option>
+                                <option value="Overdue" <%= locals.status === 'Overdue' ? 'selected' : '' %>>Overdue</option>
+                                <option value="Returned" <%= locals.status === 'Returned' ? 'selected' : '' %>>Returned</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-actions">
+                            <button type="submit" class="btn btn-secondary">
+                                <i data-lucide="filter" aria-hidden="true"></i>
+                                <span>Apply Filters</span>
+                            </button>
+
+                            <% if (hasActiveFilters) { %>
+                                <a href="/member/issues" class="btn btn-ghost" aria-label="Reset all search and status filters">
+                                    <i data-lucide="x" aria-hidden="true"></i>
+                                    <span>Reset Filters</span>
+                                </a>
+                            <% } %>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- History Table Card -->
+                <div class="card" style="padding: 0; overflow: hidden;">
+                    <% if (locals.error) { %>
+                        <div class="alert alert-danger" style="margin: var(--space-6);" role="alert">
+                            <i data-lucide="alert-triangle" class="alert-icon" aria-hidden="true"></i>
+                            <div class="alert-content">
+                                <div class="alert-title">Unable to load circulation history</div>
+                                <div class="alert-message"><%= error %></div>
+                            </div>
+                        </div>
+                    <% } else if (!locals.issues || issues.length === 0) { %>
+                        <div class="empty-state">
+                            <div class="empty-state-icon">
+                                <i data-lucide="bookmark" aria-hidden="true"></i>
+                            </div>
+                            <h3 class="empty-state-title">
+                                <%= hasActiveFilters ? 'No matching records found' : 'No borrowing activity yet' %>
+                            </h3>
+                            <p class="empty-state-text">
+                                <% if (hasActiveFilters) { %>
+                                    No circulation records match your selected filter. Try adjusting your search query or status filter.
+                                <% } else { %>
+                                    You have not borrowed any books yet. Explore the library catalog to find and check out books!
+                                <% } %>
+                            </p>
+                            <% if (hasActiveFilters) { %>
+                                <a href="/member/issues" class="btn btn-secondary">
+                                    <i data-lucide="rotate-ccw" aria-hidden="true"></i>
+                                    <span>Reset Filters</span>
+                                </a>
+                            <% } else { %>
+                                <a href="/member/books" class="btn btn-primary">
+                                    <i data-lucide="book-open" aria-hidden="true"></i>
+                                    <span>Browse Catalog</span>
+                                </a>
+                            <% } %>
+                        </div>
+                    <% } else { %>
+                        <div class="table-container" style="border: none; border-radius: 0;">
+                            <table class="table issues-table" aria-label="Circulation and Loans History">
+                                <caption class="sr-only">Circulation and Loans History - Your issued, overdue, and returned books</caption>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Book Details</th>
+                                        <th scope="col">Issue Date</th>
+                                        <th scope="col">Due Date</th>
+                                        <th scope="col">Return Date</th>
+                                        <th scope="col">Status</th>
+                                        <th scope="col">Overdue</th>
+                                        <th scope="col" style="text-align: right;">Fine Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% issues.forEach(issue => { %>
+                                        <tr>
+                                            <td>
+                                                <div class="book-title-cell">
+                                                    <div class="book-icon-wrapper" aria-hidden="true">
+                                                        <i data-lucide="book"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="book-title"><%= issue.book_title %></div>
+                                                        <div class="book-id-meta">
+                                                            <%= issue.book_author %> &bull; <span class="book-isbn"><%= issue.isbn %></span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td data-label="Issue Date">
+                                                <span style="color: var(--text-secondary);"><%= formatSafeDate(issue.issue_date) %></span>
+                                            </td>
+                                            <td data-label="Due Date">
+                                                <span class="<%= issue.status === 'Overdue' ? 'overdue-text' : '' %>">
+                                                    <%= formatSafeDate(issue.due_date) %>
+                                                </span>
+                                            </td>
+                                            <td data-label="Return Date">
+                                                <span style="color: var(--text-secondary);">
+                                                    <%= issue.return_date ? formatSafeDate(issue.return_date) : '-' %>
+                                                </span>
+                                            </td>
+                                            <td data-label="Status">
+                                                <%- include('../partials/status-badge', { status: issue.status }) %>
+                                            </td>
+                                            <td data-label="Overdue">
+                                                <% if (issue.lateDays > 0) { %>
+                                                    <span class="<%= issue.status === 'Overdue' ? 'overdue-text' : '' %>" style="font-weight: 500;">
+                                                        <%= issue.lateDays %> <%= issue.lateDays === 1 ? 'day' : 'days' %>
+                                                    </span>
+                                                <% } else { %>
+                                                    <span style="color: var(--text-muted);">-</span>
+                                                <% } %>
+                                            </td>
+                                            <td data-label="Fine" class="issue-fine-cell" style="text-align: right;">
+                                                <% if (issue.displayFine > 0) { %>
+                                                    <% if (issue.status === 'Overdue') { %>
+                                                        <span class="fine-amount overdue-fine">₹<%= parseFloat(issue.displayFine).toFixed(2) %></span>
+                                                        <span class="fine-badge fine-accruing" title="Active overdue fine calculating at ₹5/day">Accruing</span>
+                                                    <% } else { %>
+                                                        <span class="fine-amount returned-fine">₹<%= parseFloat(issue.displayFine).toFixed(2) %></span>
+                                                        <span class="fine-badge fine-settled" title="Fine finalized at book return">Finalized</span>
+                                                    <% } %>
+                                                <% } else { %>
+                                                    <span class="fine-amount fine-none">₹0.00</span>
+                                                <% } %>
+                                            </td>
+                                        </tr>
+                                    <% }) %>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Shared Pagination -->
+                        <%- include('../partials/pagination', {
+                            page: page,
+                            totalPages: totalPages,
+                            totalRows: totalRows,
+                            limit: locals.limit || 10,
+                            baseUrl: '/member/issues',
+                            itemLabel: 'records',
+                            queryParams: {
+                                q: locals.search || '',
+                                status: locals.status || 'all'
+                            }
+                        }) %>
+                    <% } %>
                 </div>
             </main>
         </div>
         
         <div class="sidebar-backdrop"></div>
     </div>
+    
     <script src="/js/shell.js"></script>
     <script>
         lucide.createIcons();

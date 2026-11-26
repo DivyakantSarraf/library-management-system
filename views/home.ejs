@@ -9,14 +9,35 @@
         <div style="padding-top: var(--space-12); text-align: center;">
             <i data-lucide="library" style="width: 48px; height: 48px; color: var(--accent-primary); margin-bottom: var(--space-4);"></i>
             <h1>Library Management System</h1>
-            <p style="margin-top: var(--space-4); margin-bottom: var(--space-8);">Welcome to the Library Management System.</p>
-            <div style="display: flex; gap: var(--space-4); justify-content: center;">
-                <a href="/admin" class="btn btn-primary">
-                    <i data-lucide="shield"></i> Admin Dashboard
-                </a>
-                <a href="/member" class="btn btn-secondary">
-                    <i data-lucide="users"></i> Member Dashboard
-                </a>
+            <p style="margin-top: var(--space-4); margin-bottom: var(--space-6);">Welcome to the Library Management System.</p>
+
+            <% if (locals.success) { %>
+                <div class="alert alert-success" role="alert" style="max-width: 420px; margin: 0 auto var(--space-6) auto; text-align: left;">
+                    <i data-lucide="check-circle" class="alert-icon"></i>
+                    <div class="alert-content">
+                        <div class="alert-message"><%= locals.success %></div>
+                    </div>
+                </div>
+            <% } %>
+
+            <div style="display: flex; flex-direction: column; gap: var(--space-4); align-items: center; justify-content: center; max-width: 460px; margin: 0 auto;">
+                <div style="display: flex; gap: var(--space-3); width: 100%; justify-content: center;">
+                    <a href="/member/login" class="btn btn-primary" style="flex: 1; justify-content: center;">
+                        <i data-lucide="log-in"></i> Member Sign In
+                    </a>
+                    <a href="/admin/login" class="btn btn-secondary" style="flex: 1; justify-content: center;">
+                        <i data-lucide="shield"></i> Admin Sign In
+                    </a>
+                </div>
+
+                <div style="display: flex; gap: var(--space-3); width: 100%; justify-content: center;">
+                    <a href="/member" class="btn btn-ghost" style="flex: 1; justify-content: center; font-size: var(--font-size-meta);">
+                        <i data-lucide="users"></i> Member Portal
+                    </a>
+                    <a href="/admin" class="btn btn-ghost" style="flex: 1; justify-content: center; font-size: var(--font-size-meta);">
+                        <i data-lucide="layout-dashboard"></i> Admin Portal
+                    </a>
+                </div>
             </div>
         </div>
     </div>

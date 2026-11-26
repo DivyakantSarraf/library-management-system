@@ -6,21 +6,235 @@
 </head>
 <body>
     <div class="app-layout fade-in">
-        <%- include('../partials/member-sidebar') %>
+        <%- include('../partials/member-sidebar', { currentPath: '/member' }) %>
         
         <div class="main-content">
             <%- include('../partials/topbar') %>
             
             <main class="page-content slide-up">
-                <h1 style="font-size: var(--font-size-title); margin-bottom: var(--space-6);">Overview</h1>
-                <div class="card">
-                    <p>Welcome to the Library Management System.</p>
-                </div>
+                <!-- Page Header Partial -->
+                <%- include('../partials/page-header', {
+                    title: 'Overview',
+                    description: locals.currentMember 
+                        ? `Welcome back, ${currentMember.name}. Here's your current library summary.`
+                        : 'Library Member Portal overview and loan summary.',
+                    action: {
+                        href: '/member/books',
+                        label: 'Browse Books',
+                        icon: 'book-open',
+                        variant: 'btn-primary'
+                    }
+                }) %>
+
+                <!-- System Notice / Error Alert -->
+                <% if (locals.error) { %>
+                    <div class="alert alert-danger" role="alert" aria-live="assertive">
+                        <i data-lucide="alert-triangle" class="alert-icon" aria-hidden="true"></i>
+                        <div class="alert-content">
+                            <div class="alert-title">Notice</div>
+                            <div class="alert-message"><%= error %></div>
+                        </div>
+                    </div>
+                <% } %>
+
+                <% if (locals.currentMember && locals.metrics) { %>
+                    <!-- Account Standing / Overdue Status Banner -->
+                    <% if (metrics.overdueLoans > 0) { %>
+                        <div class="alert alert-warning" role="alert" aria-live="polite">
+                            <i data-lucide="alert-circle" class="alert-icon" aria-hidden="true"></i>
+                            <div class="alert-content">
+                                <div class="alert-title">
+                                    You have <%= metrics.overdueLoans %> overdue <%= metrics.overdueLoans === 1 ? 'book' : 'books' %>
+                                </div>
+                                <div class="alert-message">
+                                    Late fines accumulate at ₹5/day under library policy. Current estimated dues: <strong>₹<%= metrics.totalOverdueFine.toFixed(2) %></strong>.
+                                </div>
+                            </div>
+                            <a href="/member/issues" class="btn btn-secondary btn-sm" style="flex-shrink: 0; align-self: center;">
+                                <span>View Overdue</span>
+                                <i data-lucide="arrow-right" style="width: 14px; height: 14px;" aria-hidden="true"></i>
+                            </a>
+                        </div>
+                    <% } else { %>
+                        <div class="alert alert-success" role="status">
+                            <i data-lucide="check-circle" class="alert-icon" aria-hidden="true"></i>
+                            <div class="alert-content">
+                                <div class="alert-title">Account in good standing</div>
+                                <div class="alert-message">You have no overdue books or outstanding fines.</div>
+                            </div>
+                        </div>
+                    <% } %>
+
+                    <!-- Standardized KPI Metric Cards -->
+                    <div class="stat-card-grid cols-4" role="region" aria-label="Member Borrowing Summary">
+                        <!-- Active Loans -->
+                        <div class="stat-card">
+                            <div class="stat-card-icon primary">
+                                <i data-lucide="book-open" aria-hidden="true"></i>
+                            </div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Active Loans</span>
+                                <span class="stat-card-value"><%= metrics.activeLoans %></span>
+                            </div>
+                        </div>
+
+                        <!-- Overdue Books -->
+                        <div class="stat-card">
+                            <div class="stat-card-icon <%= metrics.overdueLoans > 0 ? 'danger' : 'primary' %>">
+                                <i data-lucide="alert-circle" aria-hidden="true"></i>
+                            </div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Overdue</span>
+                                <span class="stat-card-value <%= metrics.overdueLoans > 0 ? 'alert-value' : '' %>">
+                                    <%= metrics.overdueLoans %>
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Estimated Dues -->
+                        <div class="stat-card">
+                            <div class="stat-card-icon <%= metrics.totalOverdueFine > 0 ? 'warning' : 'primary' %>">
+                                <i data-lucide="indian-rupee" aria-hidden="true"></i>
+                            </div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Estimated Dues</span>
+                                <span class="stat-card-value <%= metrics.totalOverdueFine > 0 ? 'alert-value' : '' %>">
+                                    ₹<%= (metrics.totalOverdueFine || 0).toFixed(2) %>
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Returned Books -->
+                        <div class="stat-card">
+                            <div class="stat-card-icon success">
+                                <i data-lucide="check-circle" aria-hidden="true"></i>
+                            </div>
+                            <div class="stat-card-content">
+                                <span class="stat-card-label">Returned Books</span>
+                                <span class="stat-card-value"><%= metrics.returnedBooks %></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Main Columns: Activity & Side Panels -->
+                    <div class="dashboard-columns">
+                        <!-- Recent Activity Card -->
+                        <div class="card" style="padding: 0; overflow: hidden;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--space-4) var(--space-6); border-bottom: 1px solid var(--border-color);">
+                                <h2 style="font-size: var(--font-size-heading); margin: 0;">Recent Borrowing Activity</h2>
+                                <a href="/member/issues" class="btn btn-ghost btn-sm">
+                                    <span>View All</span>
+                                    <i data-lucide="chevron-right" style="width: 14px; height: 14px;" aria-hidden="true"></i>
+                                </a>
+                            </div>
+
+                            <% if (locals.recentActivity && recentActivity.length > 0) { %>
+                                <div class="activity-table-wrapper">
+                                    <table class="table activity-table" aria-label="Recent Borrowing Activity">
+                                        <caption class="sr-only">Recent Borrowing Activity - Overview of your recent book loans</caption>
+                                        <thead>
+                                            <tr>
+                                                <th>Book Details</th>
+                                                <th>Due Date</th>
+                                                <th>Status</th>
+                                                <th style="text-align: right;">Fine</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% recentActivity.forEach(item => { %>
+                                                <tr>
+                                                    <td data-label="Book">
+                                                        <div style="font-weight: 500; color: var(--text-primary);"><%= item.book_title %></div>
+                                                        <div class="meta-text"><%= item.book_author %> &bull; <%= item.isbn %></div>
+                                                    </td>
+                                                    <td data-label="Due Date">
+                                                        <span class="<%= item.status === 'Overdue' ? 'overdue-text' : '' %>">
+                                                            <%= new Date(item.due_date).toLocaleDateString() %>
+                                                        </span>
+                                                    </td>
+                                                    <td data-label="Status">
+                                                        <%- include('../partials/status-badge', { status: item.status }) %>
+                                                    </td>
+                                                    <td data-label="Fine" style="text-align: right;">
+                                                        <% if (item.displayFine > 0) { %>
+                                                            <span class="overdue-text">₹<%= item.displayFine.toFixed(2) %></span>
+                                                        <% } else { %>
+                                                            <span style="color: var(--text-muted);">₹0.00</span>
+                                                        <% } %>
+                                                    </td>
+                                                </tr>
+                                            <% }) %>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            <% } else { %>
+                                <div style="text-align: center; padding: var(--space-8) var(--space-6); color: var(--text-secondary);">
+                                    <div style="width: 48px; height: 48px; border-radius: var(--radius-full); background: var(--bg-color); display: inline-flex; align-items: center; justify-content: center; margin-bottom: var(--space-3); color: var(--text-muted);">
+                                        <i data-lucide="book-open" style="width: 24px; height: 24px;" aria-hidden="true"></i>
+                                    </div>
+                                    <p style="font-weight: 500; color: var(--text-primary); margin: 0 0 var(--space-1) 0;">No borrowing activity found</p>
+                                    <p style="font-size: var(--font-size-meta); margin: 0 0 var(--space-4) 0;">Explore the library catalog to borrow your first book.</p>
+                                    <a href="/member/books" class="btn btn-primary btn-sm">
+                                        Browse Catalog
+                                    </a>
+                                </div>
+                            <% } %>
+                        </div>
+
+                        <!-- Side Panels: Quick Actions & Membership Info -->
+                        <div style="display: flex; flex-direction: column; gap: var(--space-6);">
+                            <!-- Quick Actions -->
+                            <div class="card">
+                                <h2 style="font-size: var(--font-size-heading); margin-top: 0; margin-bottom: var(--space-4);">Quick Actions</h2>
+                                <nav class="quick-actions" aria-label="Quick Actions">
+                                    <a href="/member/books" class="action-card">
+                                        <i data-lucide="search" aria-hidden="true"></i>
+                                        <span>Browse Catalog</span>
+                                    </a>
+                                    <a href="/member/issues" class="action-card">
+                                        <i data-lucide="bookmark" aria-hidden="true"></i>
+                                        <span>My Borrowed Books</span>
+                                    </a>
+                                    <a href="/member/profile" class="action-card">
+                                        <i data-lucide="user" aria-hidden="true"></i>
+                                        <span>My Profile</span>
+                                    </a>
+                                </nav>
+                            </div>
+
+                            <!-- Membership Info -->
+                            <div class="card">
+                                <h2 style="font-size: var(--font-size-heading); margin-top: 0; margin-bottom: var(--space-4);">Membership Info</h2>
+                                <div class="info-list">
+                                    <div class="info-row">
+                                        <span class="info-row-label">Member Name</span>
+                                        <span class="info-row-value"><%= currentMember.name %></span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="info-row-label">Member ID</span>
+                                        <span class="info-row-value" style="font-family: monospace;">#<%= currentMember.member_id %></span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="info-row-label">Email</span>
+                                        <span class="info-row-value" style="font-size: var(--font-size-meta);"><%= currentMember.email %></span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="info-row-label">Member Since</span>
+                                        <span class="info-row-value">
+                                            <%= new Date(currentMember.membership_date).toLocaleDateString() %>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <% } %>
             </main>
         </div>
         
         <div class="sidebar-backdrop"></div>
     </div>
+    
     <script src="/js/shell.js"></script>
     <script>
         lucide.createIcons();

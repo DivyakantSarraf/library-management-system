@@ -9,6 +9,8 @@
 
     --accent-primary: #4F46E5; /* Indigo */
     --accent-primary-hover: #4338CA;
+    --accent-light: #EEF2FF;
+    --accent-light-border: #C7D2FE;
     --success: #10B981;
     --success-bg: #D1FAE5;
     --warning: #F59E0B;
@@ -20,6 +22,7 @@
     --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     --font-size-title: 28px;
     --font-size-heading: 18px;
+    --font-size-lg: 18px;
     --font-size-body: 15px;
     --font-size-table: 14px;
     --font-size-meta: 13px;
@@ -39,6 +42,7 @@
     --radius-sm: 4px;
     --radius-md: 6px;
     --radius-lg: 8px;
+    --radius-full: 9999px;
 
     /* Shadows */
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);

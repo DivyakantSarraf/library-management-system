@@ -1,0 +1,38 @@
+<%
+    const rawStatus = (locals.status !== undefined && locals.status !== null) ? String(locals.status).trim() : '';
+    const statusKey = rawStatus.toLowerCase();
+
+    // Explicit mappings to predefined, safe classes and icons
+    let badgeClass = 'badge-neutral';
+    let iconName = 'info';
+    let defaultLabel = rawStatus || 'Unknown';
+
+    if (statusKey === 'issued') {
+        badgeClass = 'badge-issued';
+        iconName = 'book-open';
+        defaultLabel = 'Issued';
+    } else if (statusKey === 'overdue') {
+        badgeClass = 'badge-overdue';
+        iconName = 'alert-circle';
+        defaultLabel = 'Overdue';
+    } else if (statusKey === 'returned') {
+        badgeClass = 'badge-returned';
+        iconName = 'check';
+        defaultLabel = 'Returned';
+    } else if (statusKey === 'available' || statusKey === 'in stock') {
+        badgeClass = 'badge-available';
+        iconName = 'check-circle';
+        const countVal = parseInt(locals.count, 10);
+        defaultLabel = (!isNaN(countVal) && countVal >= 0) ? `${countVal} Available` : 'Available';
+    } else if (statusKey === 'out of stock' || statusKey === 'unavailable') {
+        badgeClass = 'badge-unavailable';
+        iconName = 'x-circle';
+        defaultLabel = 'Out of Stock';
+    }
+
+    const badgeLabel = locals.label || defaultLabel;
+%>
+<span class="status-badge <%= badgeClass %>" role="status" aria-label="Status: <%= badgeLabel %>">
+    <i data-lucide="<%= iconName %>" class="status-badge-icon" aria-hidden="true"></i>
+    <span><%= badgeLabel %></span>
+</span>

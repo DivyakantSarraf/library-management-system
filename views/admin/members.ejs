@@ -416,6 +416,7 @@
         <div class="drawer-overlay" id="formDrawerOverlay" onclick="closeDrawer()"></div>
         <div class="drawer" id="formDrawer" aria-modal="true" role="dialog" aria-labelledby="drawerTitle">
             <form id="memberForm" method="POST" action="/admin/members" onsubmit="return handleFormSubmit()">
+                <input type="hidden" name="_csrf" value="<%= locals.csrfToken || '' %>">
                 <div class="drawer-header">
                     <h2 id="drawerTitle" style="font-size: var(--font-size-heading);">Add Member</h2>
                     <button type="button" class="btn btn-ghost icon-btn" onclick="closeDrawer()" aria-label="Close drawer">
@@ -469,6 +470,7 @@
                 </div>
                 <div class="modal-footer">
                     <form id="deleteForm" method="POST" action="">
+                        <input type="hidden" name="_csrf" value="<%= locals.csrfToken || '' %>">
                         <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
                         <button type="submit" class="btn btn-danger" id="deleteSubmitBtn">Delete Member</button>
                     </form>

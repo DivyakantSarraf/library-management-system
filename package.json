@@ -4,7 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "node tests/unit_tests.js"
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "test": "node tests/unit_tests.js",
+    "test:http": "node tests/http_authorization_tests.js"
   },
   "keywords": [],
   "author": "",
@@ -12,6 +15,7 @@
   "type": "commonjs",
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "connect-pg-simple": "^10.0.0",
     "dotenv": "^18.0.5",
     "ejs": "^6.0.1",
     "express": "^5.2.1",

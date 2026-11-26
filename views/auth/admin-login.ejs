@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('../partials/head') %>
+    <title><%= locals.title || 'Admin Sign In - Library Management System' %></title>
+</head>
+<body>
+    <div class="auth-wrapper fade-in">
+        <main class="auth-card" role="main">
+            <header class="auth-header">
+                <div class="auth-brand">
+                    <i data-lucide="library" style="width: 36px; height: 36px;"></i>
+                </div>
+                <h1 class="auth-title">Library System</h1>
+                <p class="auth-subtitle">Circulation & Collection Management</p>
+                <div class="auth-badge auth-badge-admin">
+                    <i data-lucide="shield" style="width: 14px; height: 14px;"></i>
+                    <span>Administrator Portal</span>
+                </div>
+            </header>
+
+            <% if (locals.error) { %>
+                <div class="alert alert-danger" role="alert" aria-live="polite" style="margin-bottom: var(--space-4);">
+                    <i data-lucide="alert-circle" class="alert-icon"></i>
+                    <div class="alert-content">
+                        <div class="alert-title">Sign In Failed</div>
+                        <div class="alert-message"><%= locals.error %></div>
+                    </div>
+                </div>
+            <% } %>
+
+            <% if (locals.success) { %>
+                <div class="alert alert-success" role="alert" aria-live="polite" style="margin-bottom: var(--space-4);">
+                    <i data-lucide="check-circle" class="alert-icon"></i>
+                    <div class="alert-content">
+                        <div class="alert-message"><%= locals.success %></div>
+                    </div>
+                </div>
+            <% } %>
+
+            <form action="/admin/login" method="POST" id="adminLoginForm" novalidate>
+                <input type="hidden" name="_csrf" value="<%= locals.csrfToken || '' %>">
+                <div class="form-group">
+                    <label for="adminUsername" class="form-label">Admin Username</label>
+                    <input 
+                        type="text" 
+                        id="adminUsername" 
+                        name="username" 
+                        class="form-control" 
+                        autocomplete="username" 
+                        required 
+                        aria-required="true" 
+                        placeholder="Enter admin username"
+                        value="<%= locals.submittedUsername || '' %>"
+                        autofocus
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="adminPassword" class="form-label">Password</label>
+                    <div class="password-input-wrapper">
+                        <input 
+                            type="password" 
+                            id="adminPassword" 
+                            name="password" 
+                            class="form-control" 
+                            autocomplete="current-password" 
+                            required 
+                            aria-required="true" 
+                            placeholder="Enter your password"
+                        >
+                        <button 
+                            type="button" 
+                            class="toggle-password-btn" 
+                            id="togglePasswordBtn" 
+                            aria-label="Show password as plain text" 
+                            aria-pressed="false"
+                        >
+                            <i data-lucide="eye" id="togglePasswordIcon" style="width: 18px; height: 18px;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div style="margin-top: var(--space-6);">
+                    <button type="submit" class="btn btn-primary btn-block" id="submitBtn">
+                        <span class="btn-text" id="btnText">Sign In to Dashboard</span>
+                        <span class="btn-spinner" id="btnSpinner" style="display: none; align-items: center; justify-content: center; gap: var(--space-2);">
+                            <i data-lucide="loader-2" class="spin" style="width: 16px; height: 16px;"></i>
+                            <span>Signing in...</span>
+                        </span>
+                    </button>
+                </div>
+            </form>
+
+            <footer class="auth-footer">
+                <div>Are you a library member? <a href="/member/login">Go to Member Sign In</a></div>
+            </footer>
+        </main>
+
+        <nav class="auth-nav-back" aria-label="Home Navigation">
+            <a href="/">
+                <i data-lucide="arrow-left" style="width: 14px; height: 14px;"></i>
+                <span>Back to Home</span>
+            </a>
+        </nav>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+
+            // Password show/hide toggle
+            const passwordInput = document.getElementById('adminPassword');
+            const toggleBtn = document.getElementById('togglePasswordBtn');
+            const toggleIcon = document.getElementById('togglePasswordIcon');
+
+            if (toggleBtn && passwordInput) {
+                toggleBtn.addEventListener('click', function() {
+                    const isPassword = passwordInput.getAttribute('type') === 'password';
+                    if (isPassword) {
+                        passwordInput.setAttribute('type', 'text');
+                        toggleBtn.setAttribute('aria-label', 'Hide password');
+                        toggleBtn.setAttribute('aria-pressed', 'true');
+                        toggleBtn.innerHTML = '<i data-lucide="eye-off" style="width: 18px; height: 18px;"></i>';
+                    } else {
+                        passwordInput.setAttribute('type', 'password');
+                        toggleBtn.setAttribute('aria-label', 'Show password as plain text');
+                        toggleBtn.setAttribute('aria-pressed', 'false');
+                        toggleBtn.innerHTML = '<i data-lucide="eye" style="width: 18px; height: 18px;"></i>';
+                    }
+                    lucide.createIcons();
+                });
+            }
+
+            // Form submission loading state
+            const form = document.getElementById('adminLoginForm');
+            const submitBtn = document.getElementById('submitBtn');
+            const btnText = document.getElementById('btnText');
+            const btnSpinner = document.getElementById('btnSpinner');
+
+            if (form && submitBtn) {
+                form.addEventListener('submit', function(e) {
+                    const username = document.getElementById('adminUsername').value.trim();
+                    const password = passwordInput.value;
+
+                    if (!username || !password) {
+                        return; // Let server or browser report missing fields
+                    }
+
+                    submitBtn.disabled = true;
+                    if (btnText) btnText.style.display = 'none';
+                    if (btnSpinner) btnSpinner.style.display = 'inline-flex';
+                    lucide.createIcons();
+                });
+            }
+        });
+    </script>
+</body>
+</html>
