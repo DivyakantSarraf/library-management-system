@@ -27,12 +27,12 @@ CREATE TABLE members (
     member_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
-    name VARCHAR(100) NOT NULL,
+    name VARCHAR(100),
     email VARCHAR(150) NOT NULL UNIQUE,
-    phone VARCHAR(15),
+    phone VARCHAR(20),
     address TEXT,
     membership_date DATE NOT NULL DEFAULT CURRENT_DATE,
-    admin_id INTEGER NOT NULL,
+    admin_id INTEGER,
 
     CONSTRAINT members_admin_fk
         FOREIGN KEY (admin_id)
@@ -134,6 +134,12 @@ CREATE INDEX idx_issues_book
 
 CREATE INDEX idx_issues_status
     ON issues(status);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_members_username_lower
+    ON members (LOWER(username));
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_members_email_lower
+    ON members (LOWER(email));
 
 
 -- ============================================

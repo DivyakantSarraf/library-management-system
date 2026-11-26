@@ -47,7 +47,7 @@ class ReportModel {
             SELECT 
                 i.issue_id,
                 b.title AS book_title,
-                m.name AS member_name,
+                COALESCE(m.name, m.username) AS member_name,
                 i.issue_date,
                 i.due_date,
                 i.return_date,
@@ -104,7 +104,7 @@ class ReportModel {
             SELECT 
                 i.issue_id,
                 b.title AS book_title,
-                m.name AS member_name,
+                COALESCE(m.name, m.username) AS member_name,
                 i.issue_date,
                 i.due_date,
                 i.return_date,

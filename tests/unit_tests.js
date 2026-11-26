@@ -689,7 +689,7 @@ console.log('====================================================');
         assert.ok(html.includes('Active Loans'));
         assert.ok(html.includes('Personal &amp; Contact Details') || html.includes('Personal & Contact Details'));
         assert.ok(html.includes('id="memberName"'));
-        assert.ok(html.includes('required'));
+        assert.ok(html.includes('Optional. 2–100 characters when provided.'));
         assert.ok(html.includes('minlength="2"'));
         assert.ok(html.includes('maxlength="100"'));
         assert.ok(html.includes('id="memberEmail"'));
@@ -698,7 +698,7 @@ console.log('====================================================');
         assert.ok(html.includes('field-badge-readonly'));
         assert.ok(html.includes('id="memberPhone"'));
         assert.ok(html.includes('maxlength="20"'));
-        assert.ok(html.includes('pattern="^[0-9+\\s()\\-]+$"'));
+        assert.ok(html.includes('pattern="^[0-9+\\s\\(\\)\\-]+$"'));
         assert.ok(html.includes('id="memberAddress"'));
         assert.ok(html.includes('maxlength="500"'));
         assert.ok(html.includes('action="/member/profile"'));
@@ -921,27 +921,24 @@ console.log('====================================================');
             assert.strictEqual(emptyRes.totalPages, 0);
         });
 
-        await runAsyncTest('MemberPortalModel.updateProfile() rejects missing or whitespace-only name', async () => {
+        await runAsyncTest('MemberPortalModel.updateProfile() handles empty optional name as null (Part 9B.9)', async () => {
             const member = await MemberPortalModel.getDefaultMember();
-            // Missing name
-            let threw = false;
-            try {
-                await MemberPortalModel.updateProfile(member.member_id, { name: '', phone: null, address: null });
-            } catch (err) {
-                threw = true;
-                assert.strictEqual(err.message, 'NAME_REQUIRED');
-            }
-            assert.strictEqual(threw, true, 'Empty name should throw NAME_REQUIRED');
+            const originalName = member.name;
+
+            // Empty string
+            const res1 = await MemberPortalModel.updateProfile(member.member_id, { name: '', phone: member.phone, address: member.address });
+            assert.strictEqual(res1.name, null, 'Empty name should be saved as null');
 
             // Whitespace-only name
-            threw = false;
-            try {
-                await MemberPortalModel.updateProfile(member.member_id, { name: '     ', phone: null, address: null });
-            } catch (err) {
-                threw = true;
-                assert.strictEqual(err.message, 'NAME_REQUIRED');
-            }
-            assert.strictEqual(threw, true, 'Whitespace name should throw NAME_REQUIRED');
+            const res2 = await MemberPortalModel.updateProfile(member.member_id, { name: '     ', phone: member.phone, address: member.address });
+            assert.strictEqual(res2.name, null, 'Whitespace name should be saved as null');
+
+            // null name
+            const res3 = await MemberPortalModel.updateProfile(member.member_id, { name: null, phone: member.phone, address: member.address });
+            assert.strictEqual(res3.name, null, 'null name should be saved as null');
+
+            // Restore original name
+            await MemberPortalModel.updateProfile(member.member_id, { name: originalName, phone: member.phone, address: member.address });
         });
 
         await runAsyncTest('MemberPortalModel.updateProfile() enforces name length boundaries (2 to 100 chars)', async () => {
@@ -1118,10 +1115,10 @@ console.log('====================================================');
             const MemberPortalController = require('../controllers/memberPortalController');
             const member = await MemberPortalModel.getDefaultMember();
 
-            // Test 1: Invalid Name (whitespace only)
+            // Test 1: Invalid Name (too short: 1 char when provided)
             const req1 = {
                 user: { id: member.member_id, role: 'member' },
-                body: { name: '   ', phone: '9876543210', address: '123 Street' }
+                body: { name: 'A', phone: '9876543210', address: '123 Street' }
             };
             let capturedStatus = null;
             let capturedView = null;
@@ -1135,9 +1132,9 @@ console.log('====================================================');
             await MemberPortalController.updateProfile(req1, res1);
             assert.strictEqual(capturedStatus, 400, 'Must return HTTP 400 on validation failure');
             assert.strictEqual(capturedView, 'member/profile');
-            assert.strictEqual(capturedData.error, 'Full Name is required.');
+            assert.strictEqual(capturedData.error, 'Full Name must be at least 2 characters.');
             // Verify submitted values are preserved in currentMember
-            assert.strictEqual(capturedData.currentMember.name, '   ');
+            assert.strictEqual(capturedData.currentMember.name, 'A');
             assert.strictEqual(capturedData.currentMember.phone, '9876543210');
             assert.strictEqual(capturedData.currentMember.address, '123 Street');
             assert.strictEqual(capturedData.currentMember.email, member.email, 'Immutable email preserved');
@@ -1204,6 +1201,12 @@ console.log('====================================================');
     // ====================================================
     const { runRateLimitTests } = require('./rate_limit_tests');
     await runRateLimitTests({ runTest, runAsyncTest });
+
+    // ====================================================
+    // 16. MEMBER SELF-REGISTRATION SUITE (Part 9A & 9B)
+    // ====================================================
+    const { runRegistrationTests } = require('./registration_tests');
+    await runRegistrationTests({ runTest, runAsyncTest });
 
     try {
         await pool.end();

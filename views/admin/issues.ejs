@@ -479,7 +479,7 @@
                             <option value="">Select a member</option>
                             <% if (locals.members && members.length > 0) { %>
                                 <% members.forEach(member => { %>
-                                    <option value="<%= member.member_id %>"><%= member.name %> (<%= member.email %>)</option>
+                                    <option value="<%= member.member_id %>"><%= member.display_name || member.name || member.username %> (<%= member.email %>)</option>
                                 <% }) %>
                             <% } %>
                         </select>

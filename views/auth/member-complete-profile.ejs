@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('../partials/head') %>
+    <title><%= locals.title || 'Complete Your Profile - Library Management System' %></title>
+</head>
+<body>
+    <div class="auth-wrapper fade-in">
+        <main class="auth-card auth-card-wide" role="main">
+            <header class="auth-header">
+                <div class="auth-brand">
+                    <i data-lucide="library" style="width: 36px; height: 36px;" aria-hidden="true"></i>
+                </div>
+                <h1 class="auth-title">Complete Your Profile</h1>
+                <p class="auth-subtitle">
+                    Welcome<% if (locals.currentMember && currentMember.username) { %>, <strong><%= currentMember.username %></strong><% } %>! Add your contact details now or skip straight to your dashboard.
+                </p>
+                <div class="auth-badge auth-badge-member">
+                    <i data-lucide="sparkles" style="width: 14px; height: 14px;" aria-hidden="true"></i>
+                    <span>Account Created</span>
+                </div>
+            </header>
+
+            <nav class="auth-stepper" aria-label="Registration Steps">
+                <div class="auth-step is-complete">
+                    <span class="auth-step-num" aria-hidden="true">✓</span>
+                    <span>Account Details</span>
+                </div>
+                <div class="auth-step is-active" aria-current="step">
+                    <span class="auth-step-num" aria-hidden="true">2</span>
+                    <span>Optional Profile</span>
+                </div>
+            </nav>
+
+            <% if (locals.error) { %>
+                <div class="alert alert-danger" role="alert" aria-live="polite" style="margin-bottom: var(--space-4);">
+                    <i data-lucide="alert-circle" class="alert-icon" aria-hidden="true"></i>
+                    <div class="alert-content">
+                        <div class="alert-title">Unable to Save Profile</div>
+                        <div class="alert-message"><%= locals.error %></div>
+                    </div>
+                </div>
+            <% } %>
+
+            <%
+                const errs = locals.fieldErrors || {};
+                const vals = locals.formValues || {};
+            %>
+
+            <form action="/member/complete-profile" method="POST" id="completeProfileForm" novalidate>
+                <input type="hidden" name="_csrf" value="<%= locals.csrfToken || '' %>">
+
+                <div class="form-group">
+                    <label for="profileName" class="form-label">
+                        Full Name <span class="optional-pill">Optional</span>
+                    </label>
+                    <input
+                        type="text"
+                        id="profileName"
+                        name="name"
+                        class="form-control <%= errs.name ? 'is-invalid' : '' %>"
+                        autocomplete="name"
+                        minlength="2"
+                        maxlength="100"
+                        placeholder="e.g. Alex Reader"
+                        value="<%= vals.name || '' %>"
+                        aria-invalid="<%= errs.name ? 'true' : 'false' %>"
+                        aria-describedby="nameHelper nameError"
+                    >
+                    <div id="nameHelper" class="form-helper">Optional. 2–100 characters when provided.</div>
+                    <div id="nameError" class="field-error" role="alert" aria-live="polite"><%= errs.name || '' %></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="profilePhone" class="form-label">
+                        Phone Number <span class="optional-pill">Optional</span>
+                    </label>
+                    <input
+                        type="tel"
+                        id="profilePhone"
+                        name="phone"
+                        class="form-control <%= errs.phone ? 'is-invalid' : '' %>"
+                        autocomplete="tel"
+                        maxlength="20"
+                        pattern="^[0-9+\s\(\)\-]+$"
+                        placeholder="e.g. +91 98765 43210"
+                        value="<%= vals.phone || '' %>"
+                        aria-invalid="<%= errs.phone ? 'true' : 'false' %>"
+                        aria-describedby="phoneHelper phoneError"
+                    >
+                    <div id="phoneHelper" class="form-helper">Optional. Max 20 characters (digits, spaces, +, -, parentheses).</div>
+                    <div id="phoneError" class="field-error" role="alert" aria-live="polite"><%= errs.phone || '' %></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="profileAddress" class="form-label">
+                        Address <span class="optional-pill">Optional</span>
+                    </label>
+                    <textarea
+                        id="profileAddress"
+                        name="address"
+                        class="form-control <%= errs.address ? 'is-invalid' : '' %>"
+                        rows="3"
+                        maxlength="500"
+                        autocomplete="street-address"
+                        placeholder="Optional residential or mailing address"
+                        aria-invalid="<%= errs.address ? 'true' : 'false' %>"
+                        aria-describedby="addressHelper addressError"
+                    ><%= vals.address || '' %></textarea>
+                    <div id="addressHelper" class="form-helper">Optional. Maximum 500 characters.</div>
+                    <div id="addressError" class="field-error" role="alert" aria-live="polite"><%= errs.address || '' %></div>
+                </div>
+
+                <div class="auth-actions-stack">
+                    <button type="submit" name="action" value="complete" class="btn btn-primary btn-block" id="completeProfileBtn">
+                        <i data-lucide="check" style="width: 16px; height: 16px;" aria-hidden="true"></i>
+                        <span>Complete Profile</span>
+                    </button>
+
+                    <button type="submit" name="action" value="skip" class="btn btn-secondary btn-block" id="skipProfileBtn" formnovalidate>
+                        <span>Skip for Now</span>
+                        <i data-lucide="arrow-right" style="width: 16px; height: 16px;" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </form>
+
+            <footer class="auth-footer">
+                <div>You can always add or update these details later from <strong>My Profile</strong>.</div>
+            </footer>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.lucide) lucide.createIcons();
+
+            const form = document.getElementById('completeProfileForm');
+            const nameInput = document.getElementById('profileName');
+            const phoneInput = document.getElementById('profilePhone');
+            const addressInput = document.getElementById('profileAddress');
+            const completeBtn = document.getElementById('completeProfileBtn');
+            const skipBtn = document.getElementById('skipProfileBtn');
+            let clickedAction = 'complete';
+
+            if (completeBtn) {
+                completeBtn.addEventListener('click', function() { clickedAction = 'complete'; });
+            }
+            if (skipBtn) {
+                skipBtn.addEventListener('click', function() { clickedAction = 'skip'; });
+            }
+
+            function setFieldError(input, errorElId, message) {
+                const errEl = document.getElementById(errorElId);
+                if (!input || !errEl) return;
+                errEl.textContent = message || '';
+                if (message) {
+                    input.classList.add('is-invalid');
+                    input.setAttribute('aria-invalid', 'true');
+                } else {
+                    input.classList.remove('is-invalid');
+                    input.setAttribute('aria-invalid', 'false');
+                }
+            }
+
+            function validateName() {
+                const val = nameInput.value.trim();
+                if (!val) {
+                    setFieldError(nameInput, 'nameError', '');
+                    return true;
+                }
+                if (val.length < 2) {
+                    setFieldError(nameInput, 'nameError', 'Full Name must be at least 2 characters.');
+                    return false;
+                }
+                if (val.length > 100) {
+                    setFieldError(nameInput, 'nameError', 'Full Name cannot exceed 100 characters.');
+                    return false;
+                }
+                setFieldError(nameInput, 'nameError', '');
+                return true;
+            }
+
+            function validatePhone() {
+                const val = phoneInput.value.trim();
+                if (!val) {
+                    setFieldError(phoneInput, 'phoneError', '');
+                    return true;
+                }
+                if (val.length > 20) {
+                    setFieldError(phoneInput, 'phoneError', 'Phone number cannot exceed 20 characters.');
+                    return false;
+                }
+                if (!/^[0-9+\-()\s]+$/.test(val)) {
+                    setFieldError(phoneInput, 'phoneError', 'Phone number can only contain digits, spaces, +, -, and parentheses.');
+                    return false;
+                }
+                setFieldError(phoneInput, 'phoneError', '');
+                return true;
+            }
+
+            function validateAddress() {
+                const val = addressInput.value.trim();
+                if (val.length > 500) {
+                    setFieldError(addressInput, 'addressError', 'Home address cannot exceed 500 characters.');
+                    return false;
+                }
+                setFieldError(addressInput, 'addressError', '');
+                return true;
+            }
+
+            if (nameInput) nameInput.addEventListener('blur', validateName);
+            if (phoneInput) phoneInput.addEventListener('blur', validatePhone);
+            if (addressInput) addressInput.addEventListener('blur', validateAddress);
+
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    const submitterAction = (e.submitter && e.submitter.value) || clickedAction;
+                    if (submitterAction === 'skip') {
+                        return; // Never block Skip for Now with client validation
+                    }
+
+                    const nOk = validateName();
+                    const pOk = validatePhone();
+                    const aOk = validateAddress();
+
+                    if (!nOk || !pOk || !aOk) {
+                        e.preventDefault();
+                        const firstInvalid = form.querySelector('.is-invalid');
+                        if (firstInvalid) firstInvalid.focus();
+                        return;
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

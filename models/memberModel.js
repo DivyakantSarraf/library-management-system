@@ -3,7 +3,7 @@ const pool = require('../config/db');
 class MemberModel {
     static async getMembers({ search = '', page = 1, limit = 10 }) {
         let query = `
-            SELECT member_id, name, email, phone, address, membership_date, admin_id 
+            SELECT member_id, username, name, email, phone, address, membership_date, admin_id
             FROM members 
             WHERE 1=1
         `;
@@ -11,7 +11,7 @@ class MemberModel {
         let paramCount = 1;
 
         if (search) {
-            query += ` AND (name ILIKE $${paramCount} OR email ILIKE $${paramCount} OR phone ILIKE $${paramCount})`;
+            query += ` AND (name ILIKE $${paramCount} OR username ILIKE $${paramCount} OR email ILIKE $${paramCount} OR phone ILIKE $${paramCount})`;
             params.push(`%${search}%`);
             paramCount++;
         }
@@ -22,7 +22,7 @@ class MemberModel {
         const totalRows = parseInt(countResult.rows[0].count, 10);
 
         // Sorting and Pagination
-        query += ` ORDER BY name ASC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+        query += ` ORDER BY COALESCE(name, username) ASC, member_id ASC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
         params.push(limit);
         params.push((page - 1) * limit);
 
@@ -41,6 +41,21 @@ class MemberModel {
         return result.rows.length ? result.rows[0].admin_id : null;
     }
 
+    static mapUniqueConstraintError(err) {
+        if (!err) return null;
+        const constraint = err.constraint || '';
+        if (constraint === 'members_email_key' || constraint === 'idx_members_email_lower') {
+            return new Error('DUPLICATE_EMAIL');
+        }
+        if (constraint === 'members_username_key' || constraint === 'idx_members_username_lower') {
+            return new Error('DUPLICATE_USERNAME');
+        }
+        if (err.code === '23505') {
+            return new Error('DUPLICATE_MEMBER');
+        }
+        return null;
+    }
+
     static async addMember({ name, email, phone, address, membership_date }) {
         const admin_id = await this.getAdminId();
         if (!admin_id) {
@@ -48,7 +63,7 @@ class MemberModel {
         }
         
         // Auto-generate deferred authentication fields to satisfy NOT NULL constraints
-        const username = email.split('@')[0] + '_' + Date.now();
+        const username = (email.split('@')[0] + '_' + Date.now()).toLowerCase();
         const password_hash = 'DEFERRED_AUTH';
 
         try {
@@ -57,12 +72,11 @@ class MemberModel {
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                 RETURNING *
             `;
-            const result = await pool.query(query, [name, email, phone, address, membership_date, username, password_hash, admin_id]);
+            const result = await pool.query(query, [name ?? null, email, phone ?? null, address ?? null, membership_date, username, password_hash, admin_id]);
             return result.rows[0];
         } catch (err) {
-            if (err.constraint === 'members_email_key') {
-                throw new Error('DUPLICATE_EMAIL');
-            }
+            const mapped = this.mapUniqueConstraintError(err);
+            if (mapped) throw mapped;
             throw err;
         }
     }
@@ -80,12 +94,11 @@ class MemberModel {
                 WHERE member_id = $6
                 RETURNING *
             `;
-            const result = await pool.query(query, [name, email, phone, address, membership_date, member_id]);
+            const result = await pool.query(query, [name ?? null, email, phone ?? null, address ?? null, membership_date, member_id]);
             return result.rows[0];
         } catch (err) {
-            if (err.constraint === 'members_email_key') {
-                throw new Error('DUPLICATE_EMAIL');
-            }
+            const mapped = this.mapUniqueConstraintError(err);
+            if (mapped) throw mapped;
             throw err;
         }
     }

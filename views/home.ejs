@@ -21,9 +21,12 @@
             <% } %>
 
             <div style="display: flex; flex-direction: column; gap: var(--space-4); align-items: center; justify-content: center; max-width: 460px; margin: 0 auto;">
-                <div style="display: flex; gap: var(--space-3); width: 100%; justify-content: center;">
+                <div style="display: flex; gap: var(--space-3); width: 100%; justify-content: center; flex-wrap: wrap;">
                     <a href="/member/login" class="btn btn-primary" style="flex: 1; justify-content: center;">
                         <i data-lucide="log-in"></i> Member Sign In
+                    </a>
+                    <a href="/member/register" class="btn btn-secondary" style="flex: 1; justify-content: center;">
+                        <i data-lucide="user-plus"></i> Sign Up
                     </a>
                     <a href="/admin/login" class="btn btn-secondary" style="flex: 1; justify-content: center;">
                         <i data-lucide="shield"></i> Admin Sign In

@@ -3,6 +3,11 @@ const pool = require('../config/db');
 
 const BCRYPT_SALT_ROUNDS = 12;
 const GENERIC_AUTH_ERROR = 'Invalid credentials. Please check your details and try again.';
+const GENERIC_REGISTRATION_DUPLICATE_ERROR = 'Unable to create an account with the provided details. Please verify your information or sign in if you already have an account.';
+const USERNAME_PATTERN = /^[a-z0-9._-]+$/;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const MIN_REGISTRATION_PASSWORD_LENGTH = 8;
+const MAX_BCRYPT_PASSWORD_BYTES = 72;
 
 class AuthService {
     /**
@@ -126,7 +131,8 @@ class AuthService {
             const query = `
                 SELECT member_id, username, password_hash, name, email
                 FROM members
-                WHERE username = $1 OR email = $1
+                WHERE LOWER(username) = LOWER($1)
+                   OR LOWER(email) = LOWER($1)
                 LIMIT 1
             `;
             const result = await pool.query(query, [cleanIdentifier]);
@@ -218,6 +224,158 @@ class AuthService {
             return null;
         }
     }
+
+    /**
+     * Validates and normalizes member self-registration inputs.
+     * @param {{ username: any, email: any, password: any, confirmPassword: any }} input
+     * @returns {{ valid: boolean, normalized?: { username: string, email: string, password: string }, fieldErrors?: object, message?: string }}
+     */
+    static validateRegistrationInput(input = {}) {
+        const { username, email, password, confirmPassword } = input || {};
+        const fieldErrors = {};
+
+        // 1. Username: string, trimmed, lowercased, 3-50 chars, no '@', ^[a-z0-9._-]+$
+        let normalizedUsername = '';
+        if (typeof username !== 'string') {
+            fieldErrors.username = 'Please enter a valid username.';
+        } else {
+            normalizedUsername = username.trim().toLowerCase();
+            if (!normalizedUsername) {
+                fieldErrors.username = 'Username is required.';
+            } else if (normalizedUsername.includes('@')) {
+                fieldErrors.username = 'Username cannot contain the @ character.';
+            } else if (normalizedUsername.length < 3 || normalizedUsername.length > 50) {
+                fieldErrors.username = 'Username must be between 3 and 50 characters.';
+            } else if (!USERNAME_PATTERN.test(normalizedUsername)) {
+                fieldErrors.username = 'Username can only contain lowercase letters, numbers, dots, underscores, and hyphens.';
+            }
+        }
+
+        // 2. Email: string, trimmed, lowercased, max 150 chars, valid email format
+        let normalizedEmail = '';
+        if (typeof email !== 'string') {
+            fieldErrors.email = 'Please enter a valid email address.';
+        } else {
+            normalizedEmail = email.trim().toLowerCase();
+            if (!normalizedEmail) {
+                fieldErrors.email = 'Email address is required.';
+            } else if (normalizedEmail.length > 150) {
+                fieldErrors.email = 'Email address cannot exceed 150 characters.';
+            } else if (!EMAIL_PATTERN.test(normalizedEmail)) {
+                fieldErrors.email = 'Please enter a valid email address.';
+            }
+        }
+
+        // 3. Password: string, min 8 chars, max 72 UTF-8 bytes (no silent truncation)
+        if (typeof password !== 'string' || password.length === 0) {
+            fieldErrors.password = 'Password is required.';
+        } else if (password.length < MIN_REGISTRATION_PASSWORD_LENGTH) {
+            fieldErrors.password = 'Password must be at least 8 characters long.';
+        } else if (Buffer.byteLength(password, 'utf8') > MAX_BCRYPT_PASSWORD_BYTES) {
+            fieldErrors.password = 'Password cannot exceed 72 UTF-8 bytes.';
+        }
+
+        // 4. Confirm password: string and exact match
+        if (typeof confirmPassword !== 'string' || confirmPassword.length === 0) {
+            fieldErrors.confirmPassword = 'Please confirm your password.';
+        } else if (typeof password === 'string' && password !== confirmPassword) {
+            fieldErrors.confirmPassword = 'Passwords do not match.';
+        }
+
+        const errorMessages = Object.values(fieldErrors);
+        if (errorMessages.length > 0) {
+            return {
+                valid: false,
+                fieldErrors,
+                message: errorMessages[0],
+                normalized: {
+                    username: normalizedUsername,
+                    email: normalizedEmail
+                }
+            };
+        }
+
+        return {
+            valid: true,
+            fieldErrors: {},
+            normalized: {
+                username: normalizedUsername,
+                email: normalizedEmail,
+                password
+            }
+        };
+    }
+
+    /**
+     * Registers a new self-service member account.
+     * Enforces role='member', bcrypt (12 rounds), parameterized SQL, and non-enumerating duplicate handling.
+     * @param {{ username: any, email: any, password: any, confirmPassword: any }} input
+     * @returns {Promise<{ success: boolean, status?: number, code?: string, user?: object, message?: string, fieldErrors?: object, normalized?: object }>}
+     */
+    static async registerMember(input = {}) {
+        const validation = this.validateRegistrationInput(input);
+        if (!validation.valid) {
+            return {
+                success: false,
+                status: 400,
+                code: 'VALIDATION_ERROR',
+                message: validation.message,
+                fieldErrors: validation.fieldErrors,
+                normalized: validation.normalized
+            };
+        }
+
+        const { username, email, password } = validation.normalized;
+        const passwordHash = await this.hashPassword(password);
+
+        const query = `
+            INSERT INTO members (
+                username,
+                email,
+                password_hash,
+                name,
+                phone,
+                address,
+                membership_date,
+                admin_id
+            )
+            VALUES ($1, $2, $3, NULL, NULL, NULL, CURRENT_DATE, NULL)
+            RETURNING member_id, username, email, name, phone, address, membership_date
+        `;
+
+        try {
+            const result = await pool.query(query, [username, email, passwordHash]);
+            const row = result.rows[0];
+            return {
+                success: true,
+                status: 201,
+                user: {
+                    id: row.member_id,
+                    username: row.username,
+                    email: row.email,
+                    name: row.name,
+                    phone: row.phone,
+                    address: row.address,
+                    membership_date: row.membership_date,
+                    role: 'member'
+                }
+            };
+        } catch (err) {
+            if (err && err.code === '23505') {
+                return {
+                    success: false,
+                    status: 409,
+                    code: 'DUPLICATE_ACCOUNT',
+                    message: GENERIC_REGISTRATION_DUPLICATE_ERROR,
+                    fieldErrors: {},
+                    normalized: { username, email }
+                };
+            }
+            console.error('Error during member registration:', err.message);
+            throw err;
+        }
+    }
 }
 
 module.exports = AuthService;
+module.exports.GENERIC_REGISTRATION_DUPLICATE_ERROR = GENERIC_REGISTRATION_DUPLICATE_ERROR;

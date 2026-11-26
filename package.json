@@ -7,7 +7,7 @@
     "start": "node app.js",
     "dev": "nodemon app.js",
     "test": "node tests/unit_tests.js",
-    "test:http": "node tests/http_authorization_tests.js"
+    "test:http": "node tests/http_authorization_tests.js && node tests/http_registration_tests.js"
   },
   "keywords": [],
   "author": "",

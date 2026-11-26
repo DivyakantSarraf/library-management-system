@@ -208,7 +208,8 @@ class MemberPortalController {
                 return res.redirect('/member/login');
             }
 
-            const { name, phone, address } = req.body;
+            const body = req.body || {};
+            const { name, phone, address } = body;
 
             // Helper to re-render form on validation error while preserving submitted values
             const renderValidationError = async (message) => {
@@ -227,52 +228,19 @@ class MemberPortalController {
                 });
             };
 
-            // 1. Name validation: required, 2-100 characters after trimming
-            const trimmedName = typeof name === 'string' ? name.trim() : '';
-            if (!trimmedName) {
-                return await renderValidationError('Full Name is required.');
+            const updatePayload = {};
+            if (Object.prototype.hasOwnProperty.call(body, 'name') && name !== undefined) {
+                updatePayload.name = name;
             }
-            if (trimmedName.length < 2) {
-                return await renderValidationError('Full Name must be at least 2 characters.');
+            if (Object.prototype.hasOwnProperty.call(body, 'phone') && phone !== undefined) {
+                updatePayload.phone = phone;
             }
-            if (trimmedName.length > 100) {
-                return await renderValidationError('Full Name cannot exceed 100 characters.');
-            }
-
-            // 2. Phone validation: optional, max 20 characters, allowed characters: digits, spaces, +, -, (, )
-            let trimmedPhone = null;
-            if (phone !== undefined && phone !== null) {
-                const p = String(phone).trim();
-                if (p.length > 0) {
-                    if (p.length > 20) {
-                        return await renderValidationError('Phone number cannot exceed 20 characters.');
-                    }
-                    const phoneRegex = /^[0-9+\-()\s]+$/;
-                    if (!phoneRegex.test(p)) {
-                        return await renderValidationError('Phone number can only contain digits, spaces, +, -, and parentheses.');
-                    }
-                    trimmedPhone = p;
-                }
-            }
-
-            // 3. Address validation: optional, max 500 characters after trimming
-            let trimmedAddress = null;
-            if (address !== undefined && address !== null) {
-                const a = String(address).trim();
-                if (a.length > 0) {
-                    if (a.length > 500) {
-                        return await renderValidationError('Home address cannot exceed 500 characters.');
-                    }
-                    trimmedAddress = a;
-                }
+            if (Object.prototype.hasOwnProperty.call(body, 'address') && address !== undefined) {
+                updatePayload.address = address;
             }
 
             // Identity scoped strictly to authenticated currentMember.member_id
-            await MemberPortalModel.updateProfile(currentMember.member_id, {
-                name: trimmedName,
-                phone: trimmedPhone,
-                address: trimmedAddress
-            });
+            await MemberPortalModel.updateProfile(currentMember.member_id, updatePayload);
 
             res.redirect(`/member/profile?success=${encodeURIComponent('Profile updated successfully.')}`);
         } catch (err) {
@@ -283,17 +251,14 @@ class MemberPortalController {
             if (err.message === 'PHONE_INVALID') {
                 return await renderValidationError('Phone number can only contain digits, spaces, +, -, and parentheses.');
             }
-            if (err.message === 'ADDRESS_TOO_LONG') {
+            if (err.message === 'ADDRESS_TOO_LONG' || err.message === 'ADDRESS_INVALID') {
                 return await renderValidationError('Home address cannot exceed 500 characters.');
             }
             if (err.message === 'NAME_TOO_LONG') {
                 return await renderValidationError('Full Name cannot exceed 100 characters.');
             }
-            if (err.message === 'NAME_TOO_SHORT') {
+            if (err.message === 'NAME_TOO_SHORT' || err.message === 'NAME_INVALID') {
                 return await renderValidationError('Full Name must be at least 2 characters.');
-            }
-            if (err.message === 'NAME_REQUIRED') {
-                return await renderValidationError('Full Name is required.');
             }
 
             res.redirect(`/member/profile?error=${encodeURIComponent('Failed to update profile. Please try again.')}`);

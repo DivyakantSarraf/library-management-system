@@ -31,7 +31,7 @@
                 <i data-lucide="user"></i>
             </div>
             <div class="user-info">
-                <span class="user-name"><%= locals.currentMember && currentMember.name ? currentMember.name : (locals.currentUser && currentUser.name ? currentUser.name : 'Member') %></span>
+                <span class="user-name"><%= locals.currentMember && (currentMember.name || currentMember.username) ? (currentMember.name || currentMember.username) : (locals.currentUser && (currentUser.name || currentUser.username) ? (currentUser.name || currentUser.username) : 'Member') %></span>
                 <span class="user-role">Library Member</span>
             </div>
             <form action="/logout" method="POST" style="margin-left: auto;">

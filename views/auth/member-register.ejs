@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('../partials/head') %>
+    <title><%= locals.title || 'Create Member Account - Library Management System' %></title>
+</head>
+<body>
+    <div class="auth-wrapper fade-in">
+        <main class="auth-card auth-card-wide" role="main">
+            <header class="auth-header">
+                <div class="auth-brand">
+                    <i data-lucide="library" style="width: 36px; height: 36px;" aria-hidden="true"></i>
+                </div>
+                <h1 class="auth-title">Create Member Account</h1>
+                <p class="auth-subtitle">Self-service library membership registration</p>
+                <div class="auth-badge auth-badge-member">
+                    <i data-lucide="user-plus" style="width: 14px; height: 14px;" aria-hidden="true"></i>
+                    <span>Member Sign Up</span>
+                </div>
+            </header>
+
+            <nav class="auth-stepper" aria-label="Registration Steps">
+                <div class="auth-step is-active" aria-current="step">
+                    <span class="auth-step-num" aria-hidden="true">1</span>
+                    <span>Account Details</span>
+                </div>
+                <div class="auth-step">
+                    <span class="auth-step-num" aria-hidden="true">2</span>
+                    <span>Optional Profile</span>
+                </div>
+            </nav>
+
+            <% if (locals.error) { %>
+                <div class="alert alert-danger" role="alert" aria-live="polite" style="margin-bottom: var(--space-4);">
+                    <i data-lucide="alert-circle" class="alert-icon" aria-hidden="true"></i>
+                    <div class="alert-content">
+                        <div class="alert-title">Registration Error</div>
+                        <div class="alert-message"><%= locals.error %></div>
+                    </div>
+                </div>
+            <% } %>
+
+            <% const errs = locals.fieldErrors || {}; %>
+
+            <form action="/member/register" method="POST" id="memberRegisterForm" novalidate>
+                <input type="hidden" name="_csrf" value="<%= locals.csrfToken || '' %>">
+
+                <div class="form-group">
+                    <label for="regUsername" class="form-label">
+                        Username<span class="required-mark" aria-hidden="true">*</span>
+                    </label>
+                    <input
+                        type="text"
+                        id="regUsername"
+                        name="username"
+                        class="form-control <%= errs.username ? 'is-invalid' : '' %>"
+                        autocomplete="username"
+                        required
+                        aria-required="true"
+                        minlength="3"
+                        maxlength="50"
+                        pattern="^[a-zA-Z0-9._\-]+$"
+                        placeholder="e.g. alex.reader"
+                        value="<%= locals.submittedUsername || '' %>"
+                        aria-invalid="<%= errs.username ? 'true' : 'false' %>"
+                        aria-describedby="usernameHelper usernameError"
+                        autofocus
+                    >
+                    <div id="usernameHelper" class="form-helper">3–50 characters. Letters, numbers, dots, underscores, or hyphens (no @). Saved in lowercase.</div>
+                    <div id="usernameError" class="field-error" role="alert" aria-live="polite"><%= errs.username || '' %></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="regEmail" class="form-label">
+                        Email Address<span class="required-mark" aria-hidden="true">*</span>
+                    </label>
+                    <input
+                        type="email"
+                        id="regEmail"
+                        name="email"
+                        class="form-control <%= errs.email ? 'is-invalid' : '' %>"
+                        autocomplete="email"
+                        required
+                        aria-required="true"
+                        maxlength="150"
+                        placeholder="e.g. alex@example.com"
+                        value="<%= locals.submittedEmail || '' %>"
+                        aria-invalid="<%= errs.email ? 'true' : 'false' %>"
+                        aria-describedby="emailHelper emailError"
+                    >
+                    <div id="emailHelper" class="form-helper">Used for sign-in and library correspondence.</div>
+                    <div id="emailError" class="field-error" role="alert" aria-live="polite"><%= errs.email || '' %></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="regPassword" class="form-label">
+                        Password<span class="required-mark" aria-hidden="true">*</span>
+                    </label>
+                    <div class="password-input-wrapper">
+                        <input
+                            type="password"
+                            id="regPassword"
+                            name="password"
+                            class="form-control <%= errs.password ? 'is-invalid' : '' %>"
+                            autocomplete="new-password"
+                            required
+                            aria-required="true"
+                            minlength="8"
+                            placeholder="At least 8 characters"
+                            aria-invalid="<%= errs.password ? 'true' : 'false' %>"
+                            aria-describedby="passwordHelper passwordError"
+                        >
+                        <button
+                            type="button"
+                            class="toggle-password-btn"
+                            data-toggle-target="regPassword"
+                            aria-label="Show password as plain text"
+                            aria-pressed="false"
+                        >
+                            <i data-lucide="eye" style="width: 18px; height: 18px;" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    <div id="passwordHelper" class="form-helper">Minimum 8 characters and maximum 72 UTF-8 bytes.</div>
+                    <div id="passwordError" class="field-error" role="alert" aria-live="polite"><%= errs.password || '' %></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="regConfirmPassword" class="form-label">
+                        Confirm Password<span class="required-mark" aria-hidden="true">*</span>
+                    </label>
+                    <div class="password-input-wrapper">
+                        <input
+                            type="password"
+                            id="regConfirmPassword"
+                            name="confirmPassword"
+                            class="form-control <%= errs.confirmPassword ? 'is-invalid' : '' %>"
+                            autocomplete="new-password"
+                            required
+                            aria-required="true"
+                            minlength="8"
+                            placeholder="Re-enter your password"
+                            aria-invalid="<%= errs.confirmPassword ? 'true' : 'false' %>"
+                            aria-describedby="confirmPasswordError"
+                        >
+                        <button
+                            type="button"
+                            class="toggle-password-btn"
+                            data-toggle-target="regConfirmPassword"
+                            aria-label="Show confirm password as plain text"
+                            aria-pressed="false"
+                        >
+                            <i data-lucide="eye" style="width: 18px; height: 18px;" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    <div id="confirmPasswordError" class="field-error" role="alert" aria-live="polite"><%= errs.confirmPassword || '' %></div>
+                </div>
+
+                <div class="auth-actions-stack">
+                    <button type="submit" class="btn btn-primary btn-block" id="registerSubmitBtn">
+                        <span class="btn-text" id="btnText">Create Member Account</span>
+                        <span class="btn-spinner" id="btnSpinner" style="display: none; align-items: center; justify-content: center; gap: var(--space-2);">
+                            <i data-lucide="loader-2" class="spin" style="width: 16px; height: 16px;" aria-hidden="true"></i>
+                            <span>Creating account...</span>
+                        </span>
+                    </button>
+                </div>
+            </form>
+
+            <footer class="auth-footer">
+                <div>Already have a member account? <a href="/member/login">Sign In</a></div>
+            </footer>
+        </main>
+
+        <nav class="auth-nav-back" aria-label="Home Navigation">
+            <a href="/">
+                <i data-lucide="arrow-left" style="width: 14px; height: 14px;" aria-hidden="true"></i>
+                <span>Back to Home</span>
+            </a>
+        </nav>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.lucide) lucide.createIcons();
+
+            // Accessible show/hide toggles for both password fields
+            document.querySelectorAll('.toggle-password-btn[data-toggle-target]').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const targetId = btn.getAttribute('data-toggle-target');
+                    const input = document.getElementById(targetId);
+                    if (!input) return;
+                    const isPassword = input.getAttribute('type') === 'password';
+                    input.setAttribute('type', isPassword ? 'text' : 'password');
+                    btn.setAttribute('aria-pressed', isPassword ? 'true' : 'false');
+                    btn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password as plain text');
+                    btn.innerHTML = isPassword
+                        ? '<i data-lucide="eye-off" style="width: 18px; height: 18px;" aria-hidden="true"></i>'
+                        : '<i data-lucide="eye" style="width: 18px; height: 18px;" aria-hidden="true"></i>';
+                    if (window.lucide) lucide.createIcons();
+                });
+            });
+
+            const form = document.getElementById('memberRegisterForm');
+            const usernameInput = document.getElementById('regUsername');
+            const emailInput = document.getElementById('regEmail');
+            const passwordInput = document.getElementById('regPassword');
+            const confirmInput = document.getElementById('regConfirmPassword');
+            const submitBtn = document.getElementById('registerSubmitBtn');
+            const btnText = document.getElementById('btnText');
+            const btnSpinner = document.getElementById('btnSpinner');
+            const encoder = typeof TextEncoder !== 'undefined' ? new TextEncoder() : null;
+
+            function setFieldError(input, errorElId, message) {
+                const errEl = document.getElementById(errorElId);
+                if (!input || !errEl) return;
+                errEl.textContent = message || '';
+                if (message) {
+                    input.classList.add('is-invalid');
+                    input.setAttribute('aria-invalid', 'true');
+                } else {
+                    input.classList.remove('is-invalid');
+                    input.setAttribute('aria-invalid', 'false');
+                }
+            }
+
+            function getUtf8ByteLength(str) {
+                if (encoder) return encoder.encode(str).length;
+                return unescape(encodeURIComponent(str)).length;
+            }
+
+            function validateUsername() {
+                const val = usernameInput.value.trim().toLowerCase();
+                if (!val) {
+                    setFieldError(usernameInput, 'usernameError', 'Username is required.');
+                    return false;
+                }
+                if (val.includes('@')) {
+                    setFieldError(usernameInput, 'usernameError', 'Username cannot contain the @ character.');
+                    return false;
+                }
+                if (val.length < 3 || val.length > 50) {
+                    setFieldError(usernameInput, 'usernameError', 'Username must be between 3 and 50 characters.');
+                    return false;
+                }
+                if (!/^[a-z0-9._-]+$/.test(val)) {
+                    setFieldError(usernameInput, 'usernameError', 'Username can only contain letters, numbers, dots, underscores, and hyphens.');
+                    return false;
+                }
+                setFieldError(usernameInput, 'usernameError', '');
+                return true;
+            }
+
+            function validateEmail() {
+                const val = emailInput.value.trim().toLowerCase();
+                if (!val) {
+                    setFieldError(emailInput, 'emailError', 'Email address is required.');
+                    return false;
+                }
+                if (val.length > 150) {
+                    setFieldError(emailInput, 'emailError', 'Email address cannot exceed 150 characters.');
+                    return false;
+                }
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(val)) {
+                    setFieldError(emailInput, 'emailError', 'Please enter a valid email address.');
+                    return false;
+                }
+                setFieldError(emailInput, 'emailError', '');
+                return true;
+            }
+
+            function validatePassword() {
+                const val = passwordInput.value;
+                if (!val) {
+                    setFieldError(passwordInput, 'passwordError', 'Password is required.');
+                    return false;
+                }
+                if (val.length < 8) {
+                    setFieldError(passwordInput, 'passwordError', 'Password must be at least 8 characters long.');
+                    return false;
+                }
+                if (getUtf8ByteLength(val) > 72) {
+                    setFieldError(passwordInput, 'passwordError', 'Password cannot exceed 72 UTF-8 bytes.');
+                    return false;
+                }
+                setFieldError(passwordInput, 'passwordError', '');
+                return true;
+            }
+
+            function validateConfirmPassword() {
+                const val = confirmInput.value;
+                if (!val) {
+                    setFieldError(confirmInput, 'confirmPasswordError', 'Please confirm your password.');
+                    return false;
+                }
+                if (val !== passwordInput.value) {
+                    setFieldError(confirmInput, 'confirmPasswordError', 'Passwords do not match.');
+                    return false;
+                }
+                setFieldError(confirmInput, 'confirmPasswordError', '');
+                return true;
+            }
+
+            if (usernameInput) usernameInput.addEventListener('blur', validateUsername);
+            if (emailInput) emailInput.addEventListener('blur', validateEmail);
+            if (passwordInput) {
+                passwordInput.addEventListener('blur', validatePassword);
+                passwordInput.addEventListener('input', function() {
+                    if (confirmInput && confirmInput.value) validateConfirmPassword();
+                });
+            }
+            if (confirmInput) confirmInput.addEventListener('blur', validateConfirmPassword);
+
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    const uOk = validateUsername();
+                    const eOk = validateEmail();
+                    const pOk = validatePassword();
+                    const cOk = validateConfirmPassword();
+
+                    if (!uOk || !eOk || !pOk || !cOk) {
+                        e.preventDefault();
+                        const firstInvalid = form.querySelector('.is-invalid');
+                        if (firstInvalid) firstInvalid.focus();
+                        return;
+                    }
+
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        if (btnText) btnText.style.display = 'none';
+                        if (btnSpinner) btnSpinner.style.display = 'inline-flex';
+                        if (window.lucide) lucide.createIcons();
+                    }
+                });
+            }
+
+            window.addEventListener('pageshow', function() {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    if (btnText) btnText.style.display = 'inline';
+                    if (btnSpinner) btnSpinner.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

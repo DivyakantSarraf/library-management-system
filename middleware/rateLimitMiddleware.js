@@ -27,10 +27,13 @@ const { isApiOrAjaxRequest } = require('./authMiddleware');
 const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 const MAX_ATTEMPTS_PER_IP = 10;
 const MAX_ATTEMPTS_PER_COMPOUND = 5;
+const MAX_REGISTRATIONS_PER_IP = 5;
 
 // In-memory buckets: key -> { count: number, resetAt: number }
+// Note: Single-process in-memory store, consistent with login rate limiting.
 const ipBuckets = new Map();
 const compoundBuckets = new Map();
+const regIpBuckets = new Map();
 
 /**
  * Periodically purge expired bucket entries to prevent memory accumulation.
@@ -45,6 +48,11 @@ const cleanupInterval = setInterval(() => {
     for (const [key, record] of compoundBuckets.entries()) {
         if (record.resetAt <= now) {
             compoundBuckets.delete(key);
+        }
+    }
+    for (const [key, record] of regIpBuckets.entries()) {
+        if (record.resetAt <= now) {
+            regIpBuckets.delete(key);
         }
     }
 }, 5 * 60 * 1000);
@@ -158,6 +166,84 @@ function recordLoginSuccess(ip, username) {
 function resetRateLimits() {
     ipBuckets.clear();
     compoundBuckets.clear();
+    regIpBuckets.clear();
+}
+
+/**
+ * Resolves client IP for registration rate limiting without trusting arbitrary forwarded headers.
+ * @param {import('express').Request} req
+ * @returns {string}
+ */
+function getRegistrationClientIp(req) {
+    if (!req) return '127.0.0.1';
+    return req.ip || req.connection?.remoteAddress || req.socket?.remoteAddress || '127.0.0.1';
+}
+
+/**
+ * Checks and records a registration POST attempt for the given IP.
+ * Allows up to MAX_REGISTRATIONS_PER_IP (5) attempts per 15-minute window.
+ * @param {string} ip
+ * @returns {{ isLimited: boolean, retryAfterSeconds: number }}
+ */
+function checkAndRecordRegistrationAttempt(ip) {
+    const now = Date.now();
+    const record = regIpBuckets.get(ip);
+
+    if (record && record.resetAt > now) {
+        if (record.count >= MAX_REGISTRATIONS_PER_IP) {
+            return {
+                isLimited: true,
+                retryAfterSeconds: Math.max(1, Math.ceil((record.resetAt - now) / 1000))
+            };
+        }
+        record.count++;
+        return { isLimited: false, retryAfterSeconds: 0 };
+    }
+
+    regIpBuckets.set(ip, { count: 1, resetAt: now + WINDOW_MS });
+    return { isLimited: false, retryAfterSeconds: 0 };
+}
+
+/**
+ * Clears only registration rate limit counters (for isolated registration tests).
+ */
+function resetRegistrationRateLimits() {
+    regIpBuckets.clear();
+}
+
+/**
+ * Factory for creating registration POST rate limiting middleware.
+ * Note: In-memory, single-process limiter isolated from login rate limiter buckets.
+ */
+function createRegistrationRateLimiter() {
+    return (req, res, next) => {
+        const ip = getRegistrationClientIp(req);
+        const { isLimited, retryAfterSeconds } = checkAndRecordRegistrationAttempt(ip);
+
+        if (isLimited) {
+            res.setHeader('Retry-After', String(retryAfterSeconds));
+
+            if (isApiOrAjaxRequest(req)) {
+                return res.status(429).json({
+                    error: `Too many registration attempts. Please try again after ${Math.ceil(retryAfterSeconds / 60)} minute(s).`
+                });
+            }
+
+            const submittedUsername = req.body && typeof req.body.username === 'string' ? req.body.username.trim() : '';
+            const submittedEmail = req.body && typeof req.body.email === 'string' ? req.body.email.trim() : '';
+
+            return res.status(429).render('auth/member-register', {
+                title: 'Create Member Account - Library Management System',
+                currentPath: '/member/register',
+                error: `Too many registration attempts. Please try again after ${Math.ceil(retryAfterSeconds / 60)} minute(s).`,
+                fieldErrors: {},
+                submittedUsername,
+                submittedEmail
+            });
+        }
+
+        next();
+    };
 }
 
 /**
@@ -199,12 +285,17 @@ function createLoginRateLimiter(role) {
 
 module.exports = {
     createLoginRateLimiter,
+    createRegistrationRateLimiter,
     checkRateLimit,
+    checkAndRecordRegistrationAttempt,
     recordLoginFailure,
     recordLoginSuccess,
     resetRateLimits,
+    resetRegistrationRateLimits,
     getClientIp,
+    getRegistrationClientIp,
     WINDOW_MS,
     MAX_ATTEMPTS_PER_IP,
-    MAX_ATTEMPTS_PER_COMPOUND
+    MAX_ATTEMPTS_PER_COMPOUND,
+    MAX_REGISTRATIONS_PER_IP
 };

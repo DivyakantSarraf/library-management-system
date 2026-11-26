@@ -5,12 +5,13 @@ require('dotenv').config();
 const { createSessionMiddleware } = require('./config/session');
 const passport = require('./config/passport');
 const authController = require('./controllers/authController');
-const { requireAdmin, requireMember, preventBrowserCaching, isApiOrAjaxRequest } = require('./middleware/authMiddleware');
+const { requireAdmin, requireMember, requireGuest, preventBrowserCaching, isApiOrAjaxRequest } = require('./middleware/authMiddleware');
 const { csrfProtection } = require('./middleware/csrfMiddleware');
-const { createLoginRateLimiter } = require('./middleware/rateLimitMiddleware');
+const { createLoginRateLimiter, createRegistrationRateLimiter } = require('./middleware/rateLimitMiddleware');
 
 const adminLoginLimiter = createLoginRateLimiter('admin');
 const memberLoginLimiter = createLoginRateLimiter('member');
+const memberRegisterLimiter = createRegistrationRateLimiter();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -58,6 +59,10 @@ app.get('/admin/login', authController.getAdminLogin);
 app.post('/admin/login', adminLoginLimiter, authController.postAdminLogin);
 app.get('/member/login', authController.getMemberLogin);
 app.post('/member/login', memberLoginLimiter, authController.postMemberLogin);
+app.get('/member/register', preventBrowserCaching, requireGuest, authController.getMemberRegister);
+app.post('/member/register', preventBrowserCaching, requireGuest, memberRegisterLimiter, authController.postMemberRegister);
+app.get('/member/complete-profile', preventBrowserCaching, requireMember, authController.getCompleteProfile);
+app.post('/member/complete-profile', preventBrowserCaching, requireMember, authController.postCompleteProfile);
 
 // Logout handling: State-changing logout is EXCLUSIVELY permitted via POST with a valid CSRF token.
 // GET requests to /logout MUST NOT destroy or modify an authenticated session.

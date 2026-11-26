@@ -16,7 +16,7 @@
                 <%- include('../partials/page-header', {
                     title: 'Overview',
                     description: locals.currentMember 
-                        ? `Welcome back, ${currentMember.name}. Here's your current library summary.`
+                        ? `Welcome back, ${currentMember.name || currentMember.username || 'Member'}. Here's your current library summary.`
                         : 'Library Member Portal overview and loan summary.',
                     action: {
                         href: '/member/books',
@@ -208,7 +208,7 @@
                                 <div class="info-list">
                                     <div class="info-row">
                                         <span class="info-row-label">Member Name</span>
-                                        <span class="info-row-value"><%= currentMember.name %></span>
+                                        <span class="info-row-value"><%= currentMember.name || currentMember.username || 'Not set' %></span>
                                     </div>
                                     <div class="info-row">
                                         <span class="info-row-label">Member ID</span>

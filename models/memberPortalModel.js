@@ -7,7 +7,7 @@ class MemberPortalModel {
      */
     static async getDefaultMember() {
         const query = `
-            SELECT member_id, name, email, phone, address, membership_date, admin_id
+            SELECT member_id, username, name, email, phone, address, membership_date, admin_id
             FROM members
             ORDER BY member_id ASC
             LIMIT 1
@@ -21,7 +21,7 @@ class MemberPortalModel {
      */
     static async getMemberById(memberId) {
         const query = `
-            SELECT member_id, name, email, phone, address, membership_date, admin_id
+            SELECT member_id, username, name, email, phone, address, membership_date, admin_id
             FROM members
             WHERE member_id = $1
         `;
@@ -271,23 +271,38 @@ class MemberPortalModel {
     }
 
     /**
-     * Updates member profile details (only permitted fields: name, phone, address).
+     * Validates and normalizes optional profile fields (name, phone, address).
+     * Distinguishes omitted keys (`undefined`) from explicit clears (`""` or `null`).
      */
-    static async updateProfile(memberId, { name, phone, address }) {
-        const trimmedName = typeof name === 'string' ? name.trim() : '';
-        if (!trimmedName) {
-            throw new Error('NAME_REQUIRED');
-        }
-        if (trimmedName.length < 2) {
-            throw new Error('NAME_TOO_SHORT');
-        }
-        if (trimmedName.length > 100) {
-            throw new Error('NAME_TOO_LONG');
+    static validateProfileInput(input = {}) {
+        const safeInput = input && typeof input === 'object' ? input : {};
+        const hasOwn = (key) => Object.prototype.hasOwnProperty.call(safeInput, key) && safeInput[key] !== undefined;
+
+        const hasName = hasOwn('name');
+        let trimmedName = null;
+        if (hasName && safeInput.name !== null) {
+            if (typeof safeInput.name !== 'string') {
+                throw new Error('NAME_INVALID');
+            }
+            const n = safeInput.name.trim();
+            if (n.length > 0) {
+                if (n.length < 2) {
+                    throw new Error('NAME_TOO_SHORT');
+                }
+                if (n.length > 100) {
+                    throw new Error('NAME_TOO_LONG');
+                }
+                trimmedName = n;
+            }
         }
 
+        const hasPhone = hasOwn('phone');
         let trimmedPhone = null;
-        if (phone !== undefined && phone !== null) {
-            const p = String(phone).trim();
+        if (hasPhone && safeInput.phone !== null) {
+            if (typeof safeInput.phone !== 'string' && typeof safeInput.phone !== 'number') {
+                throw new Error('PHONE_INVALID');
+            }
+            const p = String(safeInput.phone).trim();
             if (p.length > 0) {
                 if (p.length > 20) {
                     throw new Error('PHONE_TOO_LONG');
@@ -300,9 +315,13 @@ class MemberPortalModel {
             }
         }
 
+        const hasAddress = hasOwn('address');
         let trimmedAddress = null;
-        if (address !== undefined && address !== null) {
-            const a = String(address).trim();
+        if (hasAddress && safeInput.address !== null) {
+            if (typeof safeInput.address !== 'string') {
+                throw new Error('ADDRESS_INVALID');
+            }
+            const a = safeInput.address.trim();
             if (a.length > 0) {
                 if (a.length > 500) {
                     throw new Error('ADDRESS_TOO_LONG');
@@ -311,16 +330,46 @@ class MemberPortalModel {
             }
         }
 
+        return {
+            hasName,
+            name: trimmedName,
+            hasPhone,
+            phone: trimmedPhone,
+            hasAddress,
+            address: trimmedAddress
+        };
+    }
+
+    /**
+     * Updates member profile details atomically (only permitted fields: name, phone, address).
+     * Omitted fields (`undefined`) preserve existing DB values; `""` or `null` clear to NULL.
+     */
+    static async updateProfile(memberId, input = {}) {
+        const {
+            hasName,
+            name: trimmedName,
+            hasPhone,
+            phone: trimmedPhone,
+            hasAddress,
+            address: trimmedAddress
+        } = this.validateProfileInput(input);
+
         const query = `
             UPDATE members
-            SET name = $1, phone = $2, address = $3
-            WHERE member_id = $4
-            RETURNING member_id, name, email, phone, address, membership_date, admin_id
+            SET
+                name = CASE WHEN $1::boolean THEN $2 ELSE name END,
+                phone = CASE WHEN $3::boolean THEN $4 ELSE phone END,
+                address = CASE WHEN $5::boolean THEN $6 ELSE address END
+            WHERE member_id = $7
+            RETURNING member_id, username, name, email, phone, address, membership_date, admin_id
         `;
         try {
             const result = await pool.query(query, [
+                hasName,
                 trimmedName,
+                hasPhone,
                 trimmedPhone,
+                hasAddress,
                 trimmedAddress,
                 memberId
             ]);

@@ -48,7 +48,7 @@ class IssueModel {
                 b.title AS book_title,
                 b.isbn,
                 i.member_id,
-                m.name AS member_name,
+                COALESCE(m.name, m.username) AS member_name,
                 m.email AS member_email,
                 i.issue_date,
                 i.due_date,
@@ -64,7 +64,7 @@ class IssueModel {
         let paramCount = 1;
 
         if (search) {
-            query += ` AND (b.title ILIKE $${paramCount} OR m.name ILIKE $${paramCount} OR b.isbn ILIKE $${paramCount})`;
+            query += ` AND (b.title ILIKE $${paramCount} OR m.name ILIKE $${paramCount} OR m.username ILIKE $${paramCount} OR b.isbn ILIKE $${paramCount})`;
             params.push(`%${search}%`);
             paramCount++;
         }
@@ -128,9 +128,9 @@ class IssueModel {
 
     static async getMembersForIssue() {
         const query = `
-            SELECT member_id, name, email 
+            SELECT member_id, name, username, COALESCE(name, username) AS display_name, email
             FROM members 
-            ORDER BY name ASC
+            ORDER BY COALESCE(name, username) ASC, member_id ASC
         `;
         const result = await pool.query(query);
         return result.rows;

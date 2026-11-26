@@ -133,11 +133,52 @@ function requireRole(requiredRole) {
 const requireAdmin = requireRole('admin');
 const requireMember = requireRole('member');
 
+/**
+ * Guest-Only Gate Middleware.
+ * Allows unauthenticated guests to access registration routes.
+ * Redirects authenticated users on safe GET/HEAD requests to their portal
+ * and rejects state-changing requests (e.g. POST) with HTTP 403 Forbidden.
+ */
+function requireGuest(req, res, next) {
+    const isAuthenticated = Boolean(req && req.isAuthenticated && req.isAuthenticated() && req.user);
+    if (!isAuthenticated) {
+        return next();
+    }
+
+    const userRole = req.user.role;
+    const redirectTarget = userRole === 'admin' ? '/admin' : (userRole === 'member' ? '/member' : '/');
+    const method = (req.method || 'GET').toUpperCase();
+
+    if (method === 'GET' || method === 'HEAD') {
+        if (isApiOrAjaxRequest(req)) {
+            return res.status(403).json({
+                error: 'Already signed in. Sign out before creating a new member account.'
+            });
+        }
+        return res.redirect(redirectTarget);
+    }
+
+    if (isApiOrAjaxRequest(req)) {
+        return res.status(403).json({
+            error: 'Authenticated users cannot create another account through public registration.'
+        });
+    }
+
+    return res.status(403).render('error', {
+        status: 403,
+        title: '403 Forbidden - Already Signed In',
+        message: 'You are already signed in. Please sign out before registering a new member account.',
+        currentPath: req.path,
+        user: req.user
+    });
+}
+
 module.exports = {
     requireAuth,
     requireRole,
     requireAdmin,
     requireMember,
+    requireGuest,
     preventBrowserCaching,
     getSafeRedirectUrl,
     isApiOrAjaxRequest
